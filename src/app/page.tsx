@@ -116,7 +116,7 @@ export default function FillHours() {
         const response = await fetch(`/api/hours?id=${entry._id}`, {
           method: 'DELETE',
         });
-
+  
         const data = await response.json();
         if (data.success) {
           console.log('Eintrag erfolgreich gelöscht:', data.data);
@@ -136,7 +136,7 @@ export default function FillHours() {
       }
     }
   };
-
+  
   useEffect(() => {
     if (editEntry) {
       setSelectedCategory(editEntry.category);
@@ -188,6 +188,9 @@ export default function FillHours() {
       }
     }
   };
+
+  
+  
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

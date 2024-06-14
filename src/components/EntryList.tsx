@@ -45,11 +45,12 @@ export default function EntryList({ entriesByDate, handleEditEntry, handleDelete
                   Bearbeiten
                 </button>
                 <button
-                  className="ml-2 text-sm text-red-500"
-                  onClick={() => handleDeleteEntry(entry)}
-                >
-                  Löschen
-                </button>
+                    className="ml-2 text-sm text-red-500"
+                    onClick={() => handleDeleteEntry(entry)}
+                    >
+                    Löschen
+                    </button>
+
               </li>
             ))}
           </ul>

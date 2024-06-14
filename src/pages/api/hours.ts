@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import connectToDatabase from '../../lib/mongodb';
 import Hour from '../../models/Hour';
 
@@ -19,8 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       break;
     case 'POST':
       try {
-        const hour = await Hour.create(req.body);
-        res.status(201).json({ success: true, data: hour });
+        const hours = await Hour.insertMany(req.body);
+        res.status(201).json({ success: true, data: hours });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }
@@ -37,8 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     case 'DELETE':
       try {
         const { id } = req.query;
-        await Hour.findByIdAndDelete(id);
-        res.status(200).json({ success: true });
+        const deletedHour = await Hour.findByIdAndDelete(id);
+        res.status(200).json({ success: true, data: deletedHour });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }
