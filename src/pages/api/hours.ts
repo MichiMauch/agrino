@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { connectToDatabase } from '../../lib/mongodb';
+import connectToDatabase from '../../lib/mongodb';
 import Hour from '../../models/Hour';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -11,7 +11,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     case 'GET':
       try {
         const { user } = req.query;
-        const hours = await Hour.find({ user: user });
+        const hours = await Hour.find({ user });
         res.status(200).json({ success: true, data: hours });
       } catch (error) {
         res.status(400).json({ success: false, error });
@@ -19,16 +19,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       break;
     case 'POST':
       try {
-        const hours = await Hour.insertMany(req.body);
-        res.status(201).json({ success: true, data: hours });
+        const hour = await Hour.create(req.body);
+        res.status(201).json({ success: true, data: hour });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }
       break;
     case 'PUT':
       try {
-        const { id, hours, user, category, date } = req.body;
-        const updatedHour = await Hour.findByIdAndUpdate(id, { hours, user, category, date }, { new: true });
+        const { id, hours } = req.body;
+        const updatedHour = await Hour.findByIdAndUpdate(id, { hours }, { new: true });
         res.status(200).json({ success: true, data: updatedHour });
       } catch (error) {
         res.status(400).json({ success: false, error });
@@ -37,8 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     case 'DELETE':
       try {
         const { id } = req.query;
-        const deletedHour = await Hour.findByIdAndDelete(id);
-        res.status(200).json({ success: true, data: deletedHour });
+        await Hour.findByIdAndDelete(id);
+        res.status(200).json({ success: true });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }

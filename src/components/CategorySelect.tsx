@@ -1,6 +1,6 @@
 import React from 'react';
 
-const categories = [
+export const categories = [
   { value: 'milchvieh', label: 'Milchvieh' },
   { value: 'mutterkuhe', label: 'Mutterkühe' },
   { value: 'ackerbau', label: 'Ackerbau' },

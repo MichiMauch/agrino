@@ -1,63 +1,35 @@
 "use client";
-
 import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EntryForm from '../components/EntryForm';
 import EntryList from '../components/EntryList';
 import users, { getUserById } from '../lib/users';
+import CategorySelect, { categories } from '../components/CategorySelect'; // Füge hier den Import hinzu
 
 type HoursType = {
   [key: string]: number;
 };
 
 type EntryType = {
-  _id?: string; // Optional ID field for existing entries
+  _id?: string;
   date: string;
   category: string;
   hours: number;
+  user: number;
 };
-
-const categoriesWithFixedHours = [
-  'Ferien/Frei',
-  'Unfall/Krankheit',
-  'Schule',
-  'Dienst'
-];
-
-const categories = [
-  { value: 'milchvieh', label: 'Milchvieh' },
-  { value: 'mutterkuhe', label: 'Mutterkühe' },
-  { value: 'ackerbau', label: 'Ackerbau' },
-  { value: 'biogas', label: 'Biogas' },
-  { value: 'robbergMaxi', label: 'Robberg Maxi' },
-  { value: 'oko', label: 'Öko' },
-  { value: 'pferdepension', label: 'Pferdepension' },
-  { value: 'prodVerarb', label: 'Prod. Verarb.' },
-  { value: 'schuUndBau', label: 'Schu und Bau' },
-  { value: 'garten', label: 'Garten' },
-  { value: 'saubMachGeb', label: 'Saub. Mach. Geb.' },
-  { value: 'administration', label: 'Administration' },
-  { value: 'nebenverwer', label: 'Nebenverwer' },
-  { value: 'arbeitFurDritte', label: 'Arbeit für Dritte' },
-  { value: 'Ferien/Frei', label: 'Ferien/Frei' },
-  { value: 'Unfall/Krankheit', label: 'Unfall/Krankheit' },
-  { value: 'Schule', label: 'Schule' },
-  { value: 'Dienst', label: 'Dienst' },
-];
 
 export default function FillHours() {
   const searchParams = useSearchParams();
   const userId = parseInt(searchParams?.get('user') || '1'); // Default user ID to 1 if not provided in URL
   const user = getUserById(userId);
-
   const [date, setDate] = useState<string>('');
+  const [hours, setHours] = useState<HoursType>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [inputValue, setInputValue] = useState<string>('');
   const [entriesByDate, setEntriesByDate] = useState<{ [key: string]: EntryType[] }>({});
   const [responseData, setResponseData] = useState<any>(null);
   const [jsonData, setJsonData] = useState<any[]>([]);
   const [editEntry, setEditEntry] = useState<EntryType | null>(null);
-  const [monthlyTotal, setMonthlyTotal] = useState<number>(0);
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -77,10 +49,6 @@ export default function FillHours() {
             return acc;
           }, {});
           setEntriesByDate(entriesByDate);
-
-          // Monatsgesamtstunden aktualisieren
-          const totalHours = entries.reduce((sum, entry) => sum + entry.hours, 0);
-          setMonthlyTotal(totalHours);
         } else {
           console.error('Error fetching data:', data.error);
         }
@@ -97,15 +65,28 @@ export default function FillHours() {
   };
 
   const handleAddEntry = () => {
-    if (selectedCategory) {
-      const newHours = categoriesWithFixedHours.includes(selectedCategory) ? 10 : parseFloat(inputValue);
+    if (selectedCategory && inputValue) {
+      const newHours = parseFloat(inputValue);
 
       if (!isNaN(newHours)) {
-        const newEntry = { date, category: selectedCategory, hours: newHours };
+        setHours((prevHours) => ({
+          ...prevHours,
+          [selectedCategory]: (prevHours[selectedCategory] || 0) + newHours
+        }));
 
         setEntriesByDate((prevEntriesByDate) => {
+          const newEntry = { date, category: selectedCategory, hours: newHours, user: userId };
           const dateEntries = prevEntriesByDate[date] || [];
-          const updatedDateEntries = [...dateEntries, newEntry];
+          const existingEntry = dateEntries.find(entry => entry.category === selectedCategory);
+
+          let updatedDateEntries;
+          if (existingEntry) {
+            updatedDateEntries = dateEntries.map(entry =>
+              entry.category === selectedCategory ? { ...entry, hours: entry.hours + newHours } : entry
+            );
+          } else {
+            updatedDateEntries = [...dateEntries, newEntry];
+          }
 
           return {
             ...prevEntriesByDate,
@@ -118,9 +99,6 @@ export default function FillHours() {
         // JSON-Daten aktualisieren und ergänzen
         const newRequestData = { date, category: selectedCategory, hours: newHours, user: userId };
         setJsonData((prevJsonData) => [...prevJsonData, newRequestData]);
-
-        // Monatsgesamtstunden aktualisieren
-        setMonthlyTotal((prevTotal) => prevTotal + newHours);
       }
     }
   };
@@ -129,7 +107,7 @@ export default function FillHours() {
     setEditEntry(entry);
     setDate(entry.date);
     setSelectedCategory(entry.category);
-    setInputValue(categoriesWithFixedHours.includes(entry.category) ? '10' : entry.hours.toString());
+    setInputValue(entry.hours.toString());
   };
 
   const handleDeleteEntry = async (entry: EntryType) => {
@@ -150,9 +128,6 @@ export default function FillHours() {
               [entry.date]: updatedDateEntries,
             };
           });
-
-          // Monatsgesamtstunden aktualisieren
-          setMonthlyTotal((prevTotal) => prevTotal - entry.hours);
         } else {
           console.error('Fehler beim Löschen des Eintrags:', data.error);
         }
@@ -180,7 +155,7 @@ export default function FillHours() {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ id: editEntry._id, hours: updatedHours, user: userId, category: editEntry.category, date: editEntry.date }),
+            body: JSON.stringify({ id: editEntry._id, hours: updatedHours }),
           });
 
           const data = await response.json();
@@ -199,10 +174,6 @@ export default function FillHours() {
                 [editEntry.date]: updatedDateEntries
               };
             });
-
-            // Monatsgesamtstunden aktualisieren
-            const hoursDifference = updatedHours - editEntry.hours;
-            setMonthlyTotal((prevTotal) => prevTotal + hoursDifference);
 
             setEditEntry(null);
             setInputValue('');
@@ -254,17 +225,16 @@ export default function FillHours() {
     const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' };
     return new Date(dateString).toLocaleDateString('de-DE', options);
   };
-
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Stundeneintrag von {user?.name}</h1>
+    <h1 className="text-2xl font-bold mb-4">Stundeneintrag von {user?.name}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xl font-medium">Datum</label>
-          <input 
-            type="date" 
-            value={date} 
-            onChange={(e) => setDate(e.target.value)} 
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
             className="mt-1 block w-full"
           />
         </div>
@@ -285,27 +255,27 @@ export default function FillHours() {
         </div>
         {selectedCategory && (
           <div>
-            <label className="block text-xl font-medium">{categories.find(cat => cat.value === selectedCategory)?.label}</label>
-            {!categoriesWithFixedHours.includes(selectedCategory) && (
-              <input 
-                type="number" 
-                value={inputValue}
-                onChange={handleInputChange} 
-                className="mt-1 block w-full"
-              />
-            )}
+            <label className="block text-xl font-medium">
+              {categories.find(cat => cat.value === selectedCategory)?.label}
+            </label>
+            <input
+              type="number"
+              value={inputValue}
+              onChange={handleInputChange}
+              className="mt-1 block w-full"
+            />
             {editEntry ? (
-              <button 
-                type="button" 
-                onClick={handleUpdateEntry} 
+              <button
+                type="button"
+                onClick={handleUpdateEntry}
                 className="bg-yellow-500 text-white py-1 px-3 rounded mt-2"
               >
                 Eintrag aktualisieren
               </button>
             ) : (
-              <button 
-                type="button" 
-                onClick={handleAddEntry} 
+              <button
+                type="button"
+                onClick={handleAddEntry}
                 className="bg-green-500 text-white py-1 px-3 rounded mt-2"
               >
                 Eintrag hinzufügen
@@ -315,6 +285,12 @@ export default function FillHours() {
         )}
         <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Speichern</button>
       </form>
+      
+      <EntryList
+        entriesByDate={entriesByDate}
+        handleEditEntry={handleEditEntry}
+        handleDeleteEntry={handleDeleteEntry}
+      />
       {responseData && (
         <div className="mt-6">
           <h2 className="text-xl font-bold mb-2">Gesendete Daten</h2>
@@ -323,39 +299,6 @@ export default function FillHours() {
           </pre>
         </div>
       )}
-      <div className="mt-6">
-        <h2 className="text-xl font-bold mb-2">Einträge</h2>
-        {sortedDates.map(date => (
-          <div key={date}>
-            <h3 className="text-lg font-bold">{formatDate(date)}</h3>
-            <ul className="list-disc list-inside ml-4">
-              {entriesByDate[date].map((entry, index) => (
-                <li key={index} className="mb-1">
-                  <span className="font-medium">{entry.category}:</span> {entry.hours} Stunden
-                  <button 
-                    className="ml-2 text-sm text-blue-500"
-                    onClick={() => handleEditEntry(entry)}
-                  >
-                    Bearbeiten
-                  </button>
-                  <button 
-                    className="ml-2 text-sm text-red-500"
-                    onClick={() => handleDeleteEntry(entry)}
-                  >
-                    Löschen
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <h3 className="text-lg font-bold mt-2">Total: {entriesByDate[date].reduce((sum, entry) => sum + entry.hours, 0)} Stunden
-            </h3>
-            <hr className="my-4" />
-          </div>
-        ))}
-        <div className="mt-6">
-          <h2 className="text-xl font-bold mb-2">Total Stunden im Monat: {monthlyTotal}</h2>
-        </div>
-      </div>
     </div>
   );
 }

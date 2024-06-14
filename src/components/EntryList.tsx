@@ -1,29 +1,35 @@
-import React from 'react';
 import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
 
-type EntryType = {
+interface Entry {
   _id?: string;
   date: string;
   category: string;
   hours: number;
-};
+  user: number;
+}
 
-type EntryListProps = {
-  entriesByDate: { [key: string]: EntryType[] };
-  onEditEntry: (entry: EntryType) => void;
-  onDeleteEntry: (entry: EntryType) => void;
-};
+interface EntryListProps {
+  entriesByDate: { [key: string]: Entry[] };
+  handleEditEntry: (entry: Entry) => void;
+  handleDeleteEntry: (entry: Entry) => void;
+}
 
-const EntryList: React.FC<EntryListProps> = ({ entriesByDate, onEditEntry, onDeleteEntry }) => {
+export default function EntryList({ entriesByDate, handleEditEntry, handleDeleteEntry }: EntryListProps) {
   const sortedDates = Object.keys(entriesByDate).sort();
 
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long' as const,
+      day: '2-digit' as const,
+      month: '2-digit' as const,
+      year: 'numeric' as const,
+    };
     return new Date(dateString).toLocaleDateString('de-DE', options);
   };
 
   return (
-    <div>
+    <div className="mt-6">
       <h2 className="text-xl font-bold mb-2">Einträge</h2>
       {sortedDates.map(date => (
         <div key={date}>
@@ -32,15 +38,15 @@ const EntryList: React.FC<EntryListProps> = ({ entriesByDate, onEditEntry, onDel
             {entriesByDate[date].map((entry, index) => (
               <li key={index} className="mb-1">
                 <span className="font-medium">{entry.category}:</span> {entry.hours} Stunden
-                <button 
+                <button
                   className="ml-2 text-sm text-blue-500"
-                  onClick={() => onEditEntry(entry)}
+                  onClick={() => handleEditEntry(entry)}
                 >
                   Bearbeiten
                 </button>
-                <button 
+                <button
                   className="ml-2 text-sm text-red-500"
-                  onClick={() => onDeleteEntry(entry)}
+                  onClick={() => handleDeleteEntry(entry)}
                 >
                   Löschen
                 </button>
@@ -54,6 +60,4 @@ const EntryList: React.FC<EntryListProps> = ({ entriesByDate, onEditEntry, onDel
       ))}
     </div>
   );
-};
-
-export default EntryList;
+}
