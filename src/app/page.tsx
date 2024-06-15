@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import EntryForm from '../components/EntryForm';
 import EntryList from '../components/EntryList';
 import users, { getUserById } from '../lib/users';
-import CategorySelect, { categories } from '../components/CategorySelect'; // Füge hier den Import hinzu
+import CategorySelect, { categories } from '../components/CategorySelect';
 
 type HoursType = {
   [key: string]: number;
@@ -20,7 +20,7 @@ type EntryType = {
 
 export default function FillHours() {
   const searchParams = useSearchParams();
-  const userId = parseInt(searchParams?.get('user') || '1'); // Default user ID to 1 if not provided in URL
+  const userId = parseInt(searchParams?.get('user') || '1');
   const user = getUserById(userId);
   const [date, setDate] = useState<string>('');
   const [hours, setHours] = useState<HoursType>({});
@@ -30,12 +30,12 @@ export default function FillHours() {
   const [responseData, setResponseData] = useState<any>(null);
   const [jsonData, setJsonData] = useState<any[]>([]);
   const [editEntry, setEditEntry] = useState<EntryType | null>(null);
+  const [confirmationMessage, setConfirmationMessage] = useState<string>('');
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     setDate(today);
 
-    // Fetch existing entries for the user
     const fetchEntries = async () => {
       try {
         const response = await fetch(`/api/hours?user=${userId}`);
@@ -49,11 +49,9 @@ export default function FillHours() {
             return acc;
           }, {});
           setEntriesByDate(entriesByDate);
-        } else {
-          console.error('Error fetching data:', data.error);
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching entries:', error);
       }
     };
 
@@ -64,44 +62,84 @@ export default function FillHours() {
     setInputValue(e.target.value);
   };
 
-  const handleAddEntry = () => {
-    if (selectedCategory && inputValue) {
-      const newHours = parseFloat(inputValue);
+  const handleAddEntry = async () => {
+    const newEntry: EntryType = {
+      date,
+      category: selectedCategory,
+      hours: parseFloat(inputValue),
+      user: userId,
+    };
 
-      if (!isNaN(newHours)) {
-        setHours((prevHours) => ({
-          ...prevHours,
-          [selectedCategory]: (prevHours[selectedCategory] || 0) + newHours
-        }));
+    try {
+      const response = await fetch('/api/hours', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newEntry),
+      });
 
+      const data = await response.json();
+      if (data.success) {
         setEntriesByDate((prevEntriesByDate) => {
-          const newEntry = { date, category: selectedCategory, hours: newHours, user: userId };
           const dateEntries = prevEntriesByDate[date] || [];
-          const existingEntry = dateEntries.find(entry => entry.category === selectedCategory);
-
-          let updatedDateEntries;
-          if (existingEntry) {
-            updatedDateEntries = dateEntries.map(entry =>
-              entry.category === selectedCategory ? { ...entry, hours: entry.hours + newHours } : entry
-            );
-          } else {
-            updatedDateEntries = [...dateEntries, newEntry];
-          }
-
           return {
             ...prevEntriesByDate,
-            [date]: updatedDateEntries
+            [date]: [...dateEntries, newEntry],
           };
         });
-
-        setInputValue('');
-
-        // JSON-Daten aktualisieren und ergänzen
-        const newRequestData = { date, category: selectedCategory, hours: newHours, user: userId };
-        setJsonData((prevJsonData) => [...prevJsonData, newRequestData]);
+        setConfirmationMessage('Eintrag erfolgreich hinzugefügt!');
+        setTimeout(() => setConfirmationMessage(''), 3000);
       }
+    } catch (error) {
+      console.error('Error adding entry:', error);
     }
   };
+
+  const handleUpdateEntry = async () => {
+    if (!editEntry) return;
+  
+    const updatedEntry: EntryType = {
+      ...editEntry,
+      date,
+      category: selectedCategory,
+      hours: parseFloat(inputValue),
+    };
+  
+    console.log('Updating entry with ID:', editEntry._id);
+  
+    try {
+      const response = await fetch(`/api/hours`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: editEntry._id, hours: updatedEntry.hours }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      if (data.success) {
+        setEntriesByDate((prevEntriesByDate) => {
+          const dateEntries = prevEntriesByDate[date].map((entry) =>
+            entry._id === updatedEntry._id ? updatedEntry : entry
+          );
+          return {
+            ...prevEntriesByDate,
+            [date]: dateEntries,
+          };
+        });
+        setConfirmationMessage('Eintrag erfolgreich aktualisiert!');
+        setTimeout(() => setConfirmationMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error updating entry:', error.message);
+    }
+  };
+  
 
   const handleEditEntry = (entry: EntryType) => {
     setEditEntry(entry);
@@ -111,144 +149,82 @@ export default function FillHours() {
   };
 
   const handleDeleteEntry = async (entry: EntryType) => {
-    if (entry._id) {
-      try {
-        const response = await fetch(`/api/hours?id=${entry._id}`, {
-          method: 'DELETE',
-        });
-  
-        const data = await response.json();
-        if (data.success) {
-          console.log('Eintrag erfolgreich gelöscht:', data.data);
-          setEntriesByDate((prevEntriesByDate) => {
-            const dateEntries = prevEntriesByDate[entry.date] || [];
-            const updatedDateEntries = dateEntries.filter(e => e._id !== entry._id);
-            return {
-              ...prevEntriesByDate,
-              [entry.date]: updatedDateEntries,
-            };
-          });
-        } else {
-          console.error('Fehler beim Löschen des Eintrags:', data.error);
-        }
-      } catch (error) {
-        console.error('Fehler beim Senden der Anfrage:', error);
-      }
-    }
-  };
-  
-  useEffect(() => {
-    if (editEntry) {
-      setSelectedCategory(editEntry.category);
-      setDate(editEntry.date);
-      setInputValue(editEntry.hours.toString());
-    }
-  }, [editEntry]);
-
-  const handleUpdateEntry = async () => {
-    if (editEntry && inputValue) {
-      const updatedHours = parseFloat(inputValue);
-      if (!isNaN(updatedHours)) {
-        try {
-          const response = await fetch('/api/hours', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id: editEntry._id, hours: updatedHours }),
-          });
-
-          const data = await response.json();
-          if (data.success) {
-            console.log('Eintrag erfolgreich aktualisiert:', data.data);
-            setResponseData(data.data);
-
-            // Aktualisieren Sie den Eintrag lokal
-            setEntriesByDate((prevEntriesByDate) => {
-              const dateEntries = prevEntriesByDate[editEntry.date] || [];
-              const updatedDateEntries = dateEntries.map(entry =>
-                entry._id === editEntry._id ? { ...entry, hours: updatedHours } : entry
-              );
-              return {
-                ...prevEntriesByDate,
-                [editEntry.date]: updatedDateEntries
-              };
-            });
-
-            setEditEntry(null);
-            setInputValue('');
-            setDate(new Date().toISOString().split('T')[0]);
-            setSelectedCategory('');
-          } else {
-            console.error('Fehler beim Aktualisieren des Eintrags:', data.error);
-          }
-        } catch (error) {
-          console.error('Fehler beim Senden der Anfrage:', error);
-        }
-      }
-    }
-  };
-
-  
-  
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (jsonData.length === 0) {
-      console.error('Keine Daten zum Senden');
-      return;
-    }
-
     try {
-      const response = await fetch('/api/hours', {
-        method: 'POST',
+      console.log('Deleting entry with ID:', entry._id);
+      const response = await fetch(`/api/hours?id=${entry._id}`, {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(jsonData),
       });
-
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
       const data = await response.json();
       if (data.success) {
-        console.log('Daten erfolgreich gesendet:', data.data);
-        setResponseData(data.data);
-        setJsonData([]); // Leeren Sie die jsonData nach erfolgreichem Senden
-      } else {
-        console.error('Fehler beim Senden der Daten:', data.error);
+        setEntriesByDate((prevEntriesByDate) => {
+          const dateEntries = prevEntriesByDate[entry.date].filter((e) => e._id !== entry._id);
+          return {
+            ...prevEntriesByDate,
+            [entry.date]: dateEntries,
+          };
+        });
+        setConfirmationMessage('Eintrag erfolgreich gelöscht!');
+        setTimeout(() => setConfirmationMessage(''), 3000);
       }
     } catch (error) {
-      console.error('Fehler beim Senden der Anfrage:', error);
+      console.error('Error deleting entry:', error.message);
     }
   };
-
-  const sortedDates = Object.keys(entriesByDate).sort();
-
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' };
-    return new Date(dateString).toLocaleDateString('de-DE', options);
-  };
+  
+  
+  
+  
   return (
-    <div className="container mx-auto p-4">
-    <h1 className="text-2xl font-bold mb-4">Stundeneintrag von {user?.name}</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div>
+      <h1 className="text-2xl font-bold">Stunden eintragen</h1>
+      {confirmationMessage && (
+        <div className="bg-green-500 text-white py-2 px-4 rounded mb-4">
+          {confirmationMessage}
+        </div>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (editEntry) {
+            handleUpdateEntry();
+          } else {
+            handleAddEntry();
+          }
+        }}
+      >
         <div>
-          <label className="block text-xl font-medium">Datum</label>
+          <label htmlFor="date" className="block text-xl font-medium">
+            Datum
+          </label>
           <input
             type="date"
+            id="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="mt-1 block w-full"
           />
         </div>
         <div>
-          <label className="block text-xl font-medium">Kategorie</label>
+          <label htmlFor="category" className="block text-xl font-medium">
+            Kategorie
+          </label>
           <select
+            id="category"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="mt-1 block w-full"
           >
-            <option value="" disabled>Wähle eine Kategorie</option>
+            <option value="" disabled>
+              Wähle eine Kategorie
+            </option>
             {categories.map((category) => (
               <option key={category.value} value={category.value}>
                 {category.label}
@@ -259,7 +235,7 @@ export default function FillHours() {
         {selectedCategory && (
           <div>
             <label className="block text-xl font-medium">
-              {categories.find(cat => cat.value === selectedCategory)?.label}
+              {categories.find((cat) => cat.value === selectedCategory)?.label}
             </label>
             <input
               type="number"
@@ -286,9 +262,7 @@ export default function FillHours() {
             )}
           </div>
         )}
-        <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Speichern</button>
       </form>
-      
       <EntryList
         entriesByDate={entriesByDate}
         handleEditEntry={handleEditEntry}
