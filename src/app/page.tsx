@@ -23,6 +23,7 @@ export default function FillHours() {
   const userId = parseInt(searchParams?.get('user') || '1');
   const user = getUserById(userId);
   const [date, setDate] = useState<string>('');
+  const [currentMonth, setCurrentMonth] = useState<string>(''); // Zustand für den aktuellen Monat
   const [hours, setHours] = useState<HoursType>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [inputValue, setInputValue] = useState<string>('');
@@ -30,10 +31,12 @@ export default function FillHours() {
   const [responseData, setResponseData] = useState<any>(null);
   const [editEntry, setEditEntry] = useState<EntryType | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
+  const [showMonthlyEntries, setShowMonthlyEntries] = useState<boolean>(false); // Zustand für die Monatsansicht
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     setDate(today);
+    setCurrentMonth(today.substring(0, 7)); // Setze den aktuellen Monat
 
     const fetchEntries = async () => {
       try {
@@ -60,6 +63,7 @@ export default function FillHours() {
   const handleDateClick = (date: Date) => {
     const adjustedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     setDate(adjustedDate.toISOString().split('T')[0]);
+    setShowMonthlyEntries(false); // Verberge die Monatsansicht, wenn ein einzelnes Datum ausgewählt wird
   };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -191,8 +195,22 @@ export default function FillHours() {
     }
   };
 
+  // Funktion zum Filtern der Einträge des aktuellen Monats
+  const getMonthlyEntries = () => {
+    const monthlyEntries: { [key: string]: EntryType[] } = {};
+    Object.keys(entriesByDate).forEach((key) => {
+      if (key.startsWith(currentMonth)) {
+        monthlyEntries[key] = entriesByDate[key];
+      }
+    });
+    return monthlyEntries;
+  };
+
   // Filtern Sie die Einträge nach dem ausgewählten Datum
   const filteredEntries = entriesByDate[date] || [];
+
+  // Holen Sie die Einträge des aktuellen Monats
+  const monthlyEntries = getMonthlyEntries();
 
   return (
     <div>
@@ -203,6 +221,18 @@ export default function FillHours() {
         </div>
       )}
       <CalendarComponent onDateClick={handleDateClick} />
+      <button
+        onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
+        className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
+      >
+        {showMonthlyEntries ? 'Tagesansicht' : 'Monatsansicht'}
+      </button>
+      <EntryList
+        entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
+        handleEditEntry={handleEditEntry}
+        handleDeleteEntry={handleDeleteEntry}
+        showMonthlyEntries={showMonthlyEntries} // Übergeben des Flags
+      />
       <EntryForm
         selectedCategory={selectedCategory}
         inputValue={inputValue}
@@ -211,12 +241,6 @@ export default function FillHours() {
         handleAddEntry={handleAddEntry}
         handleUpdateEntry={handleUpdateEntry}
         editEntry={editEntry !== null}
-      />
-      <EntryList
-        date={date} // Übergeben des ausgewählten Datums
-        entries={filteredEntries}  // Übergabe der gefilterten Einträge
-        handleEditEntry={handleEditEntry}
-        handleDeleteEntry={handleDeleteEntry}
       />
       {responseData && (
         <div className="mt-6">
