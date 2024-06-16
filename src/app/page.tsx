@@ -3,8 +3,8 @@ import { useState, useEffect, ChangeEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EntryForm from '../components/EntryForm';
 import EntryList from '../components/EntryList';
+import CalendarComponent from '../components/CalendarComponent';
 import users, { getUserById } from '../lib/users';
-import { categories } from '../components/CategorySelect';
 
 type HoursType = {
   [key: string]: number;
@@ -57,6 +57,11 @@ export default function FillHours() {
     fetchEntries();
   }, [userId]);
 
+  const handleDateClick = (date: Date) => {
+    const adjustedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    setDate(adjustedDate.toISOString().split('T')[0]);
+  };
+
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
@@ -89,10 +94,8 @@ export default function FillHours() {
         });
         setConfirmationMessage('Eintrag erfolgreich hinzugefügt!');
         setTimeout(() => setConfirmationMessage(''), 3000);
-        
-        // Reset form
-        const today = new Date().toISOString().split('T')[0];
-        setDate(today);
+
+        // Formular zurücksetzen
         setSelectedCategory('');
         setInputValue('');
       }
@@ -103,16 +106,16 @@ export default function FillHours() {
 
   const handleUpdateEntry = async () => {
     if (!editEntry) return;
-  
+
     const updatedEntry: EntryType = {
       ...editEntry,
       date,
       category: selectedCategory,
       hours: parseFloat(inputValue),
     };
-  
+
     console.log('Updating entry with ID:', editEntry._id);
-  
+
     try {
       const response = await fetch(`/api/hours`, {
         method: 'PUT',
@@ -121,11 +124,11 @@ export default function FillHours() {
         },
         body: JSON.stringify({ id: editEntry._id, hours: updatedEntry.hours }),
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       const data = await response.json();
       if (data.success) {
         setEntriesByDate((prevEntriesByDate) => {
@@ -139,10 +142,8 @@ export default function FillHours() {
         });
         setConfirmationMessage('Eintrag erfolgreich aktualisiert!');
         setTimeout(() => setConfirmationMessage(''), 3000);
-        
-        // Reset form
-        const today = new Date().toISOString().split('T')[0];
-        setDate(today);
+
+        // Formular zurücksetzen
         setSelectedCategory('');
         setInputValue('');
         setEditEntry(null);
@@ -168,11 +169,11 @@ export default function FillHours() {
           'Content-Type': 'application/json',
         },
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       const data = await response.json();
       if (data.success) {
         setEntriesByDate((prevEntriesByDate) => {
@@ -190,6 +191,9 @@ export default function FillHours() {
     }
   };
 
+  // Filtern Sie die Einträge nach dem ausgewählten Datum
+  const filteredEntries = entriesByDate[date] || [];
+
   return (
     <div>
       <h1 className="text-2xl font-bold">Stunden eintragen</h1>
@@ -198,11 +202,10 @@ export default function FillHours() {
           {confirmationMessage}
         </div>
       )}
+      <CalendarComponent onDateClick={handleDateClick} />
       <EntryForm
-        date={date}
         selectedCategory={selectedCategory}
         inputValue={inputValue}
-        onDateChange={setDate}
         onCategoryChange={setSelectedCategory}
         onInputChange={handleInputChange}
         handleAddEntry={handleAddEntry}
@@ -210,7 +213,8 @@ export default function FillHours() {
         editEntry={editEntry !== null}
       />
       <EntryList
-        entriesByDate={entriesByDate}
+        date={date} // Übergeben des ausgewählten Datums
+        entries={filteredEntries}  // Übergabe der gefilterten Einträge
         handleEditEntry={handleEditEntry}
         handleDeleteEntry={handleDeleteEntry}
       />

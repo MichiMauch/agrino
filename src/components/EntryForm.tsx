@@ -1,12 +1,10 @@
 "use client";
 import { ChangeEvent } from 'react';
-import CategorySelect from './CategorySelect';
+import { categories } from './CategorySelect';
 
 type EntryFormProps = {
-  date: string;
   selectedCategory: string;
   inputValue: string;
-  onDateChange: (date: string) => void;
   onCategoryChange: (category: string) => void;
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleAddEntry: () => void;
@@ -15,10 +13,8 @@ type EntryFormProps = {
 };
 
 export default function EntryForm({
-  date,
   selectedCategory,
   inputValue,
-  onDateChange,
   onCategoryChange,
   onInputChange,
   handleAddEntry,
@@ -38,18 +34,25 @@ export default function EntryForm({
       className="space-y-4"
     >
       <div>
-        <label className="block text-xl font-medium">Datum</label>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => onDateChange(e.target.value)}
+        <label className="block text-xl font-medium">Kategorie</label>
+        <select
+          value={selectedCategory}
+          onChange={(e) => onCategoryChange(e.target.value)}
           className="mt-1 block w-full"
-        />
+        >
+          <option value="" disabled>
+            Wähle eine Kategorie
+          </option>
+          {categories.map((category) => (
+            <option key={category.value} value={category.value}>
+              {category.label}
+            </option>
+          ))}
+        </select>
       </div>
-      <CategorySelect selectedCategory={selectedCategory} onSelectCategory={onCategoryChange} />
       {selectedCategory && !['ferien', 'unfall', 'schule', 'dienst'].includes(selectedCategory) && (
         <div>
-          <label className="block text-xl font-medium">{selectedCategory}</label>
+          <label className="block text-xl font-medium">{categories.find(cat => cat.value === selectedCategory)?.label}</label>
           <input
             type="number"
             value={inputValue}
