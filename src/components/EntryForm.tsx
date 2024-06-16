@@ -1,30 +1,42 @@
 "use client";
-import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import { ChangeEvent } from 'react';
+import CategorySelect from './CategorySelect';
 
-const categories = [
-  { value: 'milchvieh', label: 'Milchvieh' },
-  { value: 'mutterkuhe', label: 'Mutterkühe' },
-  { value: 'ackerbau', label: 'Ackerbau' },
-  { value: 'biogas', label: 'Biogas' },
-  { value: 'robbergMaxi', label: 'Robberg Maxi' },
-  { value: 'oko', label: 'Öko' },
-  { value: 'pferdepension', label: 'Pferdepension' },
-  { value: 'prodVerarb', label: 'Prod. Verarb.' },
-  { value: 'schuUndBau', label: 'Schu und Bau' },
-  { value: 'garten', label: 'Garten' },
-  { value: 'saubMachGeb', label: 'Saub. Mach. Geb.' },
-  { value: 'administration', label: 'Administration' },
-  { value: 'nebenverwer', label: 'Nebenverwer' },
-  { value: 'arbeitFurDritte', label: 'Arbeit für Dritte' },
-  { value: 'ferien', label: 'Ferien/Frei' },
-  { value: 'unfall', label: 'Unfall/Krankheit' },
-  { value: 'schule', label: 'Schule' },
-  { value: 'dienst', label: 'Dienst' },
-];
+type EntryFormProps = {
+  date: string;
+  selectedCategory: string;
+  inputValue: string;
+  onDateChange: (date: string) => void;
+  onCategoryChange: (category: string) => void;
+  onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  handleAddEntry: () => void;
+  handleUpdateEntry: () => void;
+  editEntry: boolean;
+};
 
-export default function EntryForm({ date, selectedCategory, inputValue, onDateChange, onCategoryChange, onInputChange, handleAddEntry, handleUpdateEntry, editEntry }) {
+export default function EntryForm({
+  date,
+  selectedCategory,
+  inputValue,
+  onDateChange,
+  onCategoryChange,
+  onInputChange,
+  handleAddEntry,
+  handleUpdateEntry,
+  editEntry
+}: EntryFormProps) {
   return (
-    <form className="space-y-4">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (editEntry) {
+          handleUpdateEntry();
+        } else {
+          handleAddEntry();
+        }
+      }}
+      className="space-y-4"
+    >
       <div>
         <label className="block text-xl font-medium">Datum</label>
         <input
@@ -34,24 +46,10 @@ export default function EntryForm({ date, selectedCategory, inputValue, onDateCh
           className="mt-1 block w-full"
         />
       </div>
-      <div>
-        <label className="block text-xl font-medium">Kategorie</label>
-        <select
-          value={selectedCategory}
-          onChange={(e) => onCategoryChange(e.target.value)}
-          className="mt-1 block w-full"
-        >
-          <option value="" disabled>Wähle eine Kategorie</option>
-          {categories.map((category) => (
-            <option key={category.value} value={category.value}>
-              {category.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <CategorySelect selectedCategory={selectedCategory} onSelectCategory={onCategoryChange} />
       {selectedCategory && !['ferien', 'unfall', 'schule', 'dienst'].includes(selectedCategory) && (
         <div>
-          <label className="block text-xl font-medium">{categories.find(cat => cat.value === selectedCategory)?.label}</label>
+          <label className="block text-xl font-medium">{selectedCategory}</label>
           <input
             type="number"
             value={inputValue}

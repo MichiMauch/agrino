@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EntryForm from '../components/EntryForm';
 import EntryList from '../components/EntryList';
 import users, { getUserById } from '../lib/users';
-import CategorySelect, { categories } from '../components/CategorySelect';
+import { categories } from '../components/CategorySelect';
 
 type HoursType = {
   [key: string]: number;
@@ -28,7 +28,6 @@ export default function FillHours() {
   const [inputValue, setInputValue] = useState<string>('');
   const [entriesByDate, setEntriesByDate] = useState<{ [key: string]: EntryType[] }>({});
   const [responseData, setResponseData] = useState<any>(null);
-  const [jsonData, setJsonData] = useState<any[]>([]);
   const [editEntry, setEditEntry] = useState<EntryType | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
 
@@ -90,6 +89,12 @@ export default function FillHours() {
         });
         setConfirmationMessage('Eintrag erfolgreich hinzugefügt!');
         setTimeout(() => setConfirmationMessage(''), 3000);
+        
+        // Reset form
+        const today = new Date().toISOString().split('T')[0];
+        setDate(today);
+        setSelectedCategory('');
+        setInputValue('');
       }
     } catch (error) {
       console.error('Error adding entry:', error);
@@ -134,12 +139,18 @@ export default function FillHours() {
         });
         setConfirmationMessage('Eintrag erfolgreich aktualisiert!');
         setTimeout(() => setConfirmationMessage(''), 3000);
+        
+        // Reset form
+        const today = new Date().toISOString().split('T')[0];
+        setDate(today);
+        setSelectedCategory('');
+        setInputValue('');
+        setEditEntry(null);
       }
     } catch (error) {
       console.error('Error updating entry:', error.message);
     }
   };
-  
 
   const handleEditEntry = (entry: EntryType) => {
     setEditEntry(entry);
@@ -178,10 +189,7 @@ export default function FillHours() {
       console.error('Error deleting entry:', error.message);
     }
   };
-  
-  
-  
-  
+
   return (
     <div>
       <h1 className="text-2xl font-bold">Stunden eintragen</h1>
@@ -190,79 +198,17 @@ export default function FillHours() {
           {confirmationMessage}
         </div>
       )}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (editEntry) {
-            handleUpdateEntry();
-          } else {
-            handleAddEntry();
-          }
-        }}
-      >
-        <div>
-          <label htmlFor="date" className="block text-xl font-medium">
-            Datum
-          </label>
-          <input
-            type="date"
-            id="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="mt-1 block w-full"
-          />
-        </div>
-        <div>
-          <label htmlFor="category" className="block text-xl font-medium">
-            Kategorie
-          </label>
-          <select
-            id="category"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="mt-1 block w-full"
-          >
-            <option value="" disabled>
-              Wähle eine Kategorie
-            </option>
-            {categories.map((category) => (
-              <option key={category.value} value={category.value}>
-                {category.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        {selectedCategory && (
-          <div>
-            <label className="block text-xl font-medium">
-              {categories.find((cat) => cat.value === selectedCategory)?.label}
-            </label>
-            <input
-              type="number"
-              value={inputValue}
-              onChange={handleInputChange}
-              className="mt-1 block w-full"
-            />
-            {editEntry ? (
-              <button
-                type="button"
-                onClick={handleUpdateEntry}
-                className="bg-yellow-500 text-white py-1 px-3 rounded mt-2"
-              >
-                Eintrag aktualisieren
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleAddEntry}
-                className="bg-green-500 text-white py-1 px-3 rounded mt-2"
-              >
-                Eintrag hinzufügen
-              </button>
-            )}
-          </div>
-        )}
-      </form>
+      <EntryForm
+        date={date}
+        selectedCategory={selectedCategory}
+        inputValue={inputValue}
+        onDateChange={setDate}
+        onCategoryChange={setSelectedCategory}
+        onInputChange={handleInputChange}
+        handleAddEntry={handleAddEntry}
+        handleUpdateEntry={handleUpdateEntry}
+        editEntry={editEntry !== null}
+      />
       <EntryList
         entriesByDate={entriesByDate}
         handleEditEntry={handleEditEntry}
