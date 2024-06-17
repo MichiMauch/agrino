@@ -1,4 +1,3 @@
-// pages/api/hours.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import connectToDatabase from '../../lib/mongodb';
 import Hour from '../../models/Hour';
@@ -40,16 +39,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { id } = req.query;
         console.log('Deleting entry with ID:', id);
         const deletedHour = await Hour.findByIdAndDelete(id);
-        if (!deletedHour) {
-          return res.status(404).json({ success: false, error: 'Entry not found' });
-        }
         res.status(200).json({ success: true, data: deletedHour });
       } catch (error) {
         res.status(400).json({ success: false, error });
       }
       break;
     default:
-      res.status(400).json({ success: false, error: 'Method not allowed' });
+      res.status(400).json({ success: false });
       break;
   }
 }

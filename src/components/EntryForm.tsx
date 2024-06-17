@@ -3,8 +3,10 @@ import { ChangeEvent } from 'react';
 import { categories } from './CategorySelect';
 
 type EntryFormProps = {
+  date: string;
   selectedCategory: string;
   inputValue: string;
+  onDateChange: (date: string) => void;
   onCategoryChange: (category: string) => void;
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleAddEntry: () => void;
@@ -13,8 +15,10 @@ type EntryFormProps = {
 };
 
 export default function EntryForm({
+  date,
   selectedCategory,
   inputValue,
+  onDateChange,
   onCategoryChange,
   onInputChange,
   handleAddEntry,
@@ -33,6 +37,15 @@ export default function EntryForm({
       }}
       className="space-y-4"
     >
+      <div>
+        <label className="block text-xl font-medium">Datum</label>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => onDateChange(e.target.value)}
+          className="mt-1 block w-full"
+        />
+      </div>
       <div>
         <label className="block text-xl font-medium">Kategorie</label>
         <select
@@ -61,16 +74,14 @@ export default function EntryForm({
           />
           {editEntry ? (
             <button
-              type="button"
-              onClick={handleUpdateEntry}
+              type="submit"
               className="bg-yellow-500 text-white py-1 px-3 rounded mt-2"
             >
               Eintrag aktualisieren
             </button>
           ) : (
             <button
-              type="button"
-              onClick={handleAddEntry}
+              type="submit"
               className="bg-green-500 text-white py-1 px-3 rounded mt-2"
             >
               Eintrag hinzufügen

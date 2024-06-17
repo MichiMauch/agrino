@@ -45,7 +45,7 @@ const EntryList: React.FC<EntryListProps> = ({ entriesByDate, handleEditEntry, h
             <h3 className="text-lg font-bold mb-2">Einträge vom {formatDate(date)}</h3>
             <ul>
               {entriesByDate[date].map((entry) => (
-                <li key={entry._id} className="border p-2 my-2">
+                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2">
                   <div>
                     <strong>Kategorie:</strong> {entry.category}
                   </div>

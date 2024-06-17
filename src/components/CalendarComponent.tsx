@@ -1,38 +1,30 @@
-"use client";
-import React, { useState } from 'react';
+import React from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { de } from 'date-fns/locale';
 import { format } from 'date-fns';
-import { setDefaultOptions } from 'date-fns';
-
-setDefaultOptions({ locale: de });
 
 type CalendarComponentProps = {
   onDateClick: (date: Date) => void;
+  onActiveStartDateChange: (view: { activeStartDate: Date | null }) => void;
 };
 
-const CalendarComponent: React.FC<CalendarComponentProps> = ({ onDateClick }) => {
-  const [value, setValue] = useState(new Date());
-
-  const handleDateChange = (date: Date) => {
-    setValue(date);
-    onDateClick(date);
+const CalendarComponent: React.FC<CalendarComponentProps> = ({ onDateClick, onActiveStartDateChange }) => {
+  const formatMonthYear = (date: Date) => {
+    return format(date, 'MMMM yyyy', { locale: de });
   };
 
   return (
-    <div>
-      <Calendar
-        onChange={handleDateChange}
-        value={value}
-        nextLabel=">"
-        prevLabel="<"
-        next2Label=">>"
-        prev2Label="<<"
-        showNeighboringMonth={false}
-        locale="de-DE"  // Verwenden Sie den entsprechenden Locale-String
-      />
-    </div>
+    <Calendar
+      onClickDay={onDateClick}
+      onActiveStartDateChange={({ activeStartDate }) => {
+        if (activeStartDate) {
+          onActiveStartDateChange({ activeStartDate });
+        }
+      }}
+      locale="de"
+      formatMonthYear={(locale, date) => formatMonthYear(date)}
+    />
   );
 };
 

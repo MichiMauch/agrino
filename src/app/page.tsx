@@ -23,7 +23,6 @@ export default function FillHours() {
   const userId = parseInt(searchParams?.get('user') || '1');
   const user = getUserById(userId);
   const [date, setDate] = useState<string>('');
-  const [currentMonth, setCurrentMonth] = useState<string>(''); // Zustand für den aktuellen Monat
   const [hours, setHours] = useState<HoursType>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [inputValue, setInputValue] = useState<string>('');
@@ -36,7 +35,6 @@ export default function FillHours() {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     setDate(today);
-    setCurrentMonth(today.substring(0, 7)); // Setze den aktuellen Monat
 
     const fetchEntries = async () => {
       try {
@@ -66,6 +64,10 @@ export default function FillHours() {
     setShowMonthlyEntries(false); // Verberge die Monatsansicht, wenn ein einzelnes Datum ausgewählt wird
   };
 
+  const handleMonthChange = ({ activeStartDate }: { activeStartDate: Date | null }) => {
+    // Funktion kann entfernt werden, wenn nicht benötigt
+  };
+
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
@@ -89,11 +91,12 @@ export default function FillHours() {
 
       const data = await response.json();
       if (data.success) {
+        const createdEntry = { ...newEntry, _id: data.data[0]._id }; // Assuming the response data is an array of created entries
         setEntriesByDate((prevEntriesByDate) => {
           const dateEntries = prevEntriesByDate[date] || [];
           return {
             ...prevEntriesByDate,
-            [date]: [...dateEntries, newEntry],
+            [date]: [...dateEntries, createdEntry],
           };
         });
         setConfirmationMessage('Eintrag erfolgreich hinzugefügt!');
@@ -195,22 +198,16 @@ export default function FillHours() {
     }
   };
 
-  // Funktion zum Filtern der Einträge des aktuellen Monats
-  const getMonthlyEntries = () => {
-    const monthlyEntries: { [key: string]: EntryType[] } = {};
-    Object.keys(entriesByDate).forEach((key) => {
-      if (key.startsWith(currentMonth)) {
-        monthlyEntries[key] = entriesByDate[key];
-      }
-    });
-    return monthlyEntries;
-  };
-
   // Filtern Sie die Einträge nach dem ausgewählten Datum
   const filteredEntries = entriesByDate[date] || [];
 
   // Holen Sie die Einträge des aktuellen Monats
-  const monthlyEntries = getMonthlyEntries();
+  const monthlyEntries = Object.keys(entriesByDate).reduce((acc: { [key: string]: EntryType[] }, key) => {
+    if (key.startsWith(date.substring(0, 7))) {
+      acc[key] = entriesByDate[key];
+    }
+    return acc;
+  }, {});
 
   return (
     <div>
@@ -220,7 +217,7 @@ export default function FillHours() {
           {confirmationMessage}
         </div>
       )}
-      <CalendarComponent onDateClick={handleDateClick} />
+      <CalendarComponent onDateClick={handleDateClick} onActiveStartDateChange={handleMonthChange} />
       <button
         onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
         className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
@@ -241,15 +238,9 @@ export default function FillHours() {
         handleAddEntry={handleAddEntry}
         handleUpdateEntry={handleUpdateEntry}
         editEntry={editEntry !== null}
+        date={date} // Übergeben des Datums
+        onDateChange={setDate} // Übergeben der Datumsänderungsfunktion
       />
-      {responseData && (
-        <div className="mt-6">
-          <h2 className="text-xl font-bold mb-2">Gesendete Daten</h2>
-          <pre className="bg-gray-100 p-4 rounded">
-            {JSON.stringify(responseData, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   );
 }
