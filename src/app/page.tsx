@@ -1,10 +1,11 @@
-"use client";
+"use client"
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EntryForm from '../components/EntryForm';
 import EntryList from '../components/EntryList';
 import CalendarComponent from '../components/CalendarComponent';
 import users, { getUserById } from '../lib/users';
+import ExportToExcel from '../components/ExportToExcel';
 
 type HoursType = {
   [key: string]: number;
@@ -241,6 +242,7 @@ export default function FillHours() {
         date={date} // Übergeben des Datums
         onDateChange={setDate} // Übergeben der Datumsänderungsfunktion
       />
+      {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} currentMonth={date.substring(0, 7)} />}
     </div>
   );
 }
