@@ -176,6 +176,8 @@ export default function FillHours() {
     }
   };
 
+  
+
   const handleEditEntry = (entry: EntryType) => {
     setEditEntry(entry);
     setDate(entry.date);
@@ -216,6 +218,40 @@ export default function FillHours() {
     }
   };
 
+  const handleSaveEntry = async (updatedEntry: EntryType) => {
+    console.log('Saving entry with ID:', updatedEntry._id);
+    try {
+      const response = await fetch(`/api/hours`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: updatedEntry._id, hours: updatedEntry.hours, remarks: updatedEntry.remarks }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      if (data.success) {
+        setEntriesByDate((prevEntriesByDate) => {
+          const dateEntries = prevEntriesByDate[updatedEntry.date].map((entry) =>
+            entry._id === updatedEntry._id ? updatedEntry : entry
+          );
+          return {
+            ...prevEntriesByDate,
+            [updatedEntry.date]: dateEntries,
+          };
+        });
+        setConfirmationMessage('Eintrag erfolgreich aktualisiert!');
+        setTimeout(() => setConfirmationMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving entry:', error.message);
+    }
+  };
+
   // Filtern Sie die Einträge nach dem ausgewählten Datum
   const filteredEntries = entriesByDate[date] || [];
 
@@ -243,11 +279,12 @@ export default function FillHours() {
         {showMonthlyEntries ? 'Tagesansicht' : 'Monatsansicht'}
       </button>
       <EntryList
-        entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
-        handleEditEntry={handleEditEntry}
-        handleDeleteEntry={handleDeleteEntry}
-        showMonthlyEntries={showMonthlyEntries} // Übergeben des Flags
-      />
+  entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
+  handleEditEntry={handleEditEntry}
+  handleDeleteEntry={handleDeleteEntry}
+  handleSaveEntry={handleSaveEntry} // Pass this function
+  showMonthlyEntries={showMonthlyEntries} // Übergeben des Flags
+/>
       <EntryForm
         selectedCategory={selectedCategory}
         inputValue={inputValue}
