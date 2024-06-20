@@ -2,12 +2,13 @@
 import React from 'react';
 
 type EntryType = {
-  _id?: string;
-  date: string;
-  category: string;
-  hours: number;
-  user: number;
-};
+    _id?: string;
+    date: string;
+    category: string;
+    hours: number;
+    remarks: string;
+    user: number;
+  };
 
 type EntryListProps = {
   entriesByDate: { [key: string]: EntryType[] };
@@ -51,6 +52,9 @@ const EntryList: React.FC<EntryListProps> = ({ entriesByDate, handleEditEntry, h
                   </div>
                   <div>
                     <strong>Stunden:</strong> {entry.hours}
+                  </div>
+                  <div>
+                    <strong>Bemerkungen:</strong> {entry.remarks}
                   </div>
                   <button onClick={() => handleEditEntry(entry)} className="bg-yellow-500 text-white py-1 px-3 rounded mt-2">
                     Bearbeiten

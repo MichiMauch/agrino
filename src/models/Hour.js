@@ -1,21 +1,25 @@
+// models/Hour.js
 import mongoose from 'mongoose';
 
 const HourSchema = new mongoose.Schema({
   date: {
     type: String,
-    required: [true, 'Please provide the date'],
+    required: true,
   },
   category: {
     type: String,
-    required: [true, 'Please provide the category'],
+    required: true,
   },
   hours: {
     type: Number,
-    required: [true, 'Please provide the hours'],
+    required: true,
+  },
+  remarks: {
+    type: String,
   },
   user: {
     type: Number,
-    required: [true, 'Please provide the user'],
+    required: true,
   },
 });
 

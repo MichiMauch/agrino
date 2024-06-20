@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EntryForm from '../components/EntryForm';
@@ -16,6 +16,7 @@ type EntryType = {
   date: string;
   category: string;
   hours: number;
+  remarks: string;
   user: number;
 };
 
@@ -27,6 +28,7 @@ export default function FillHours() {
   const [hours, setHours] = useState<HoursType>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [inputValue, setInputValue] = useState<string>('');
+  const [remarks, setRemarks] = useState<string>(''); // Added remarks state
   const [entriesByDate, setEntriesByDate] = useState<{ [key: string]: EntryType[] }>({});
   const [responseData, setResponseData] = useState<any>(null);
   const [editEntry, setEditEntry] = useState<EntryType | null>(null);
@@ -73,11 +75,19 @@ export default function FillHours() {
     setInputValue(e.target.value);
   };
 
+  const handleRemarksChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setRemarks(e.target.value);
+    console.log("Bemerkung geändert:", e.target.value); // Log the change of remarks
+  };
+
   const handleAddEntry = async () => {
+    console.log("Bemerkung beim Hinzufügen:", remarks); // Log the remarks when adding
+
     const newEntry: EntryType = {
       date,
       category: selectedCategory,
       hours: parseFloat(inputValue),
+      remarks, // Ensure remarks is included
       user: userId,
     };
 
@@ -87,12 +97,12 @@ export default function FillHours() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newEntry),
+        body: JSON.stringify(newEntry), // Ensure remarks is included in the body
       });
 
       const data = await response.json();
       if (data.success) {
-        const createdEntry = { ...newEntry, _id: data.data[0]._id }; // Assuming the response data is an array of created entries
+        const createdEntry = { ...newEntry, _id: data.data._id, remarks: data.data.remarks }; // Including remarks
         setEntriesByDate((prevEntriesByDate) => {
           const dateEntries = prevEntriesByDate[date] || [];
           return {
@@ -106,6 +116,7 @@ export default function FillHours() {
         // Formular zurücksetzen
         setSelectedCategory('');
         setInputValue('');
+        setRemarks('');
       }
     } catch (error) {
       console.error('Error adding entry:', error);
@@ -115,11 +126,14 @@ export default function FillHours() {
   const handleUpdateEntry = async () => {
     if (!editEntry) return;
 
+    console.log("Bemerkung beim Aktualisieren:", remarks); // Log the remarks when updating
+
     const updatedEntry: EntryType = {
       ...editEntry,
       date,
       category: selectedCategory,
       hours: parseFloat(inputValue),
+      remarks, // Ensure remarks is included
     };
 
     console.log('Updating entry with ID:', editEntry._id);
@@ -130,7 +144,7 @@ export default function FillHours() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: editEntry._id, hours: updatedEntry.hours }),
+        body: JSON.stringify({ id: updatedEntry._id, hours: updatedEntry.hours, remarks: updatedEntry.remarks }), // Ensure remarks is included in the body
       });
 
       if (!response.ok) {
@@ -154,6 +168,7 @@ export default function FillHours() {
         // Formular zurücksetzen
         setSelectedCategory('');
         setInputValue('');
+        setRemarks('');
         setEditEntry(null);
       }
     } catch (error) {
@@ -166,6 +181,8 @@ export default function FillHours() {
     setDate(entry.date);
     setSelectedCategory(entry.category);
     setInputValue(entry.hours.toString());
+    setRemarks(entry.remarks); // Set remarks when editing
+    console.log("Bemerkung beim Bearbeiten:", entry.remarks); // Log the remarks when editing
   };
 
   const handleDeleteEntry = async (entry: EntryType) => {
@@ -212,7 +229,7 @@ export default function FillHours() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Stunden eintragen</h1>
+      <h1 className="text-2xl font-bold">{user ? `${user.name}: Stunden eintragen` : 'Stunden eintragen'}</h1>
       {confirmationMessage && (
         <div className="bg-green-500 text-white py-2 px-4 rounded mb-4">
           {confirmationMessage}
@@ -241,6 +258,8 @@ export default function FillHours() {
         editEntry={editEntry !== null}
         date={date} // Übergeben des Datums
         onDateChange={setDate} // Übergeben der Datumsänderungsfunktion
+        remarks={remarks} // Übergeben der Bemerkungen
+        onRemarksChange={handleRemarksChange} // Übergeben der Bemerkungsänderungsfunktion
       />
       {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} currentMonth={date.substring(0, 7)} />}
     </div>
