@@ -6,6 +6,11 @@ import EntryList from '../components/EntryList';
 import CalendarComponent from '../components/CalendarComponent';
 import users, { getUserById } from '../lib/users';
 import ExportToExcel from '../components/ExportToExcel';
+import { format, parseISO } from 'date-fns';
+import { de } from 'date-fns/locale';
+import Image from 'next/image';
+import agrinoLogo from '/public/images/agrino_logo_web.png';
+
 
 type HoursType = {
   [key: string]: number;
@@ -28,12 +33,12 @@ export default function FillHours() {
   const [hours, setHours] = useState<HoursType>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [inputValue, setInputValue] = useState<string>('');
-  const [remarks, setRemarks] = useState<string>(''); // Added remarks state
+  const [remarks, setRemarks] = useState<string>('');
   const [entriesByDate, setEntriesByDate] = useState<{ [key: string]: EntryType[] }>({});
   const [responseData, setResponseData] = useState<any>(null);
   const [editEntry, setEditEntry] = useState<EntryType | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
-  const [showMonthlyEntries, setShowMonthlyEntries] = useState<boolean>(false); // Zustand für die Monatsansicht
+  const [showMonthlyEntries, setShowMonthlyEntries] = useState<boolean>(false);
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -64,12 +69,10 @@ export default function FillHours() {
   const handleDateClick = (date: Date) => {
     const adjustedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     setDate(adjustedDate.toISOString().split('T')[0]);
-    setShowMonthlyEntries(false); // Verberge die Monatsansicht, wenn ein einzelnes Datum ausgewählt wird
+    setShowMonthlyEntries(false);
   };
 
-  const handleMonthChange = ({ activeStartDate }: { activeStartDate: Date | null }) => {
-    // Funktion kann entfernt werden, wenn nicht benötigt
-  };
+  const handleMonthChange = ({ activeStartDate }: { activeStartDate: Date | null }) => {};
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -77,17 +80,17 @@ export default function FillHours() {
 
   const handleRemarksChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     setRemarks(e.target.value);
-    console.log("Bemerkung geändert:", e.target.value); // Log the change of remarks
+    console.log("Bemerkung geändert:", e.target.value);
   };
 
   const handleAddEntry = async () => {
-    console.log("Bemerkung beim Hinzufügen:", remarks); // Log the remarks when adding
+    console.log("Bemerkung beim Hinzufügen:", remarks);
 
     const newEntry: EntryType = {
       date,
       category: selectedCategory,
       hours: parseFloat(inputValue),
-      remarks, // Ensure remarks is included
+      remarks,
       user: userId,
     };
 
@@ -97,12 +100,12 @@ export default function FillHours() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newEntry), // Ensure remarks is included in the body
+        body: JSON.stringify(newEntry),
       });
 
       const data = await response.json();
       if (data.success) {
-        const createdEntry = { ...newEntry, _id: data.data._id, remarks: data.data.remarks }; // Including remarks
+        const createdEntry = { ...newEntry, _id: data.data._id, remarks: data.data.remarks };
         setEntriesByDate((prevEntriesByDate) => {
           const dateEntries = prevEntriesByDate[date] || [];
           return {
@@ -113,7 +116,6 @@ export default function FillHours() {
         setConfirmationMessage('Eintrag erfolgreich hinzugefügt!');
         setTimeout(() => setConfirmationMessage(''), 3000);
 
-        // Formular zurücksetzen
         setSelectedCategory('');
         setInputValue('');
         setRemarks('');
@@ -126,14 +128,14 @@ export default function FillHours() {
   const handleUpdateEntry = async () => {
     if (!editEntry) return;
 
-    console.log("Bemerkung beim Aktualisieren:", remarks); // Log the remarks when updating
+    console.log("Bemerkung beim Aktualisieren:", remarks);
 
     const updatedEntry: EntryType = {
       ...editEntry,
       date,
       category: selectedCategory,
       hours: parseFloat(inputValue),
-      remarks, // Ensure remarks is included
+      remarks,
     };
 
     console.log('Updating entry with ID:', editEntry._id);
@@ -144,7 +146,7 @@ export default function FillHours() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: updatedEntry._id, hours: updatedEntry.hours, remarks: updatedEntry.remarks }), // Ensure remarks is included in the body
+        body: JSON.stringify({ id: updatedEntry._id, hours: updatedEntry.hours, remarks: updatedEntry.remarks }),
       });
 
       if (!response.ok) {
@@ -165,7 +167,6 @@ export default function FillHours() {
         setConfirmationMessage('Eintrag erfolgreich aktualisiert!');
         setTimeout(() => setConfirmationMessage(''), 3000);
 
-        // Formular zurücksetzen
         setSelectedCategory('');
         setInputValue('');
         setRemarks('');
@@ -176,15 +177,13 @@ export default function FillHours() {
     }
   };
 
-  
-
   const handleEditEntry = (entry: EntryType) => {
     setEditEntry(entry);
     setDate(entry.date);
     setSelectedCategory(entry.category);
     setInputValue(entry.hours.toString());
-    setRemarks(entry.remarks); // Set remarks when editing
-    console.log("Bemerkung beim Bearbeiten:", entry.remarks); // Log the remarks when editing
+    setRemarks(entry.remarks);
+    console.log("Bemerkung beim Bearbeiten:", entry.remarks);
   };
 
   const handleDeleteEntry = async (entry: EntryType) => {
@@ -228,11 +227,11 @@ export default function FillHours() {
         },
         body: JSON.stringify({ id: updatedEntry._id, hours: updatedEntry.hours, remarks: updatedEntry.remarks }),
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       const data = await response.json();
       if (data.success) {
         setEntriesByDate((prevEntriesByDate) => {
@@ -252,10 +251,8 @@ export default function FillHours() {
     }
   };
 
-  // Filtern Sie die Einträge nach dem ausgewählten Datum
   const filteredEntries = entriesByDate[date] || [];
 
-  // Holen Sie die Einträge des aktuellen Monats
   const monthlyEntries = Object.keys(entriesByDate).reduce((acc: { [key: string]: EntryType[] }, key) => {
     if (key.startsWith(date.substring(0, 7))) {
       acc[key] = entriesByDate[key];
@@ -263,15 +260,28 @@ export default function FillHours() {
     return acc;
   }, {});
 
+  const dailyHours = Object.keys(entriesByDate).reduce((acc: { [key: string]: number }, key) => {
+    acc[key] = entriesByDate[key].reduce((total, entry) => total + entry.hours, 0);
+    return acc;
+  }, {});
+
   return (
-    <div>
+    <div className="container mx-auto px-4">
+    <div className="flex justify-center mb-4">
+      <Image src={agrinoLogo} alt="Agrino Logo" width={100} height={100} />
+      </div>
       <h1 className="text-2xl font-bold">{user ? `${user.name}: Stunden eintragen` : 'Stunden eintragen'}</h1>
       {confirmationMessage && (
         <div className="bg-green-500 text-white py-2 px-4 rounded mb-4">
           {confirmationMessage}
         </div>
       )}
-      <CalendarComponent onDateClick={handleDateClick} onActiveStartDateChange={handleMonthChange} />
+      <CalendarComponent
+        onDateClick={handleDateClick}
+        onActiveStartDateChange={handleMonthChange}
+        entriesByDate={dailyHours}
+        locale="de" // Locale hinzufügen
+      />
       <button
         onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
         className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
@@ -279,12 +289,12 @@ export default function FillHours() {
         {showMonthlyEntries ? 'Tagesansicht' : 'Monatsansicht'}
       </button>
       <EntryList
-  entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
-  handleEditEntry={handleEditEntry}
-  handleDeleteEntry={handleDeleteEntry}
-  handleSaveEntry={handleSaveEntry} // Pass this function
-  showMonthlyEntries={showMonthlyEntries} // Übergeben des Flags
-/>
+        entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
+        handleEditEntry={handleEditEntry}
+        handleDeleteEntry={handleDeleteEntry}
+        handleSaveEntry={handleSaveEntry}
+        showMonthlyEntries={showMonthlyEntries}
+      />
       <EntryForm
         selectedCategory={selectedCategory}
         inputValue={inputValue}
@@ -293,10 +303,10 @@ export default function FillHours() {
         handleAddEntry={handleAddEntry}
         handleUpdateEntry={handleUpdateEntry}
         editEntry={editEntry !== null}
-        date={date} // Übergeben des Datums
-        onDateChange={setDate} // Übergeben der Datumsänderungsfunktion
-        remarks={remarks} // Übergeben der Bemerkungen
-        onRemarksChange={handleRemarksChange} // Übergeben der Bemerkungsänderungsfunktion
+        date={date}
+        onDateChange={setDate}
+        remarks={remarks}
+        onRemarksChange={handleRemarksChange}
       />
       {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} currentMonth={date.substring(0, 7)} />}
     </div>
