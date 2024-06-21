@@ -11,7 +11,6 @@ import { de } from 'date-fns/locale';
 import Image from 'next/image';
 import agrinoLogo from '/public/images/agrino_logo_web.png';
 
-
 type HoursType = {
   [key: string]: number;
 };
@@ -39,6 +38,7 @@ export default function FillHours() {
   const [editEntry, setEditEntry] = useState<EntryType | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
   const [showMonthlyEntries, setShowMonthlyEntries] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<boolean>(false); // Modal visibility state
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -68,8 +68,13 @@ export default function FillHours() {
 
   const handleDateClick = (date: Date) => {
     const adjustedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    setDate(adjustedDate.toISOString().split('T')[0]);
-    setShowMonthlyEntries(false);
+    const dateString = adjustedDate.toISOString().split('T')[0];
+    setDate(dateString);
+    if (!entriesByDate[dateString] || entriesByDate[dateString].length === 0) {
+      setShowModal(true); // Show modal if no entries for the date
+    } else {
+      setShowMonthlyEntries(false);
+    }
   };
 
   const handleMonthChange = ({ activeStartDate }: { activeStartDate: Date | null }) => {};
@@ -119,6 +124,7 @@ export default function FillHours() {
         setSelectedCategory('');
         setInputValue('');
         setRemarks('');
+        setShowModal(false); // Hide modal after adding entry
       }
     } catch (error) {
       console.error('Error adding entry:', error);
@@ -171,6 +177,7 @@ export default function FillHours() {
         setInputValue('');
         setRemarks('');
         setEditEntry(null);
+        setShowModal(false); // Hide modal after updating entry
       }
     } catch (error) {
       console.error('Error updating entry:', error.message);
@@ -183,6 +190,7 @@ export default function FillHours() {
     setSelectedCategory(entry.category);
     setInputValue(entry.hours.toString());
     setRemarks(entry.remarks);
+    setShowModal(true); // Show modal when editing an entry
     console.log("Bemerkung beim Bearbeiten:", entry.remarks);
   };
 
@@ -245,10 +253,17 @@ export default function FillHours() {
         });
         setConfirmationMessage('Eintrag erfolgreich aktualisiert!');
         setTimeout(() => setConfirmationMessage(''), 3000);
+        setShowModal(false); // Hide modal after saving entry
       }
     } catch (error) {
       console.error('Error saving entry:', error.message);
     }
+  };
+
+  const openModalForToday = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setDate(today);
+    setShowModal(true);
   };
 
   const filteredEntries = entriesByDate[date] || [];
@@ -266,9 +281,9 @@ export default function FillHours() {
   }, {});
 
   return (
-    <div className="container mx-auto px-4">
-    <div className="flex justify-center mb-4">
-      <Image src={agrinoLogo} alt="Agrino Logo" width={100} height={100} />
+    <div className="container mx-auto px-4 pb-20">
+      <div className="flex justify-center mb-4">
+        <Image src={agrinoLogo} alt="Agrino Logo" width={100} height={100} />
       </div>
       <h1 className="text-2xl font-bold">{user ? `${user.name}: Stunden eintragen` : 'Stunden eintragen'}</h1>
       {confirmationMessage && (
@@ -280,14 +295,9 @@ export default function FillHours() {
         onDateClick={handleDateClick}
         onActiveStartDateChange={handleMonthChange}
         entriesByDate={dailyHours}
-        locale="de" // Locale hinzufügen
+        locale="de"
       />
-      <button
-        onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
-        className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
-      >
-        {showMonthlyEntries ? 'Tagesansicht' : 'Monatsansicht'}
-      </button>
+      
       <EntryList
         entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
         handleEditEntry={handleEditEntry}
@@ -295,28 +305,49 @@ export default function FillHours() {
         handleSaveEntry={handleSaveEntry}
         showMonthlyEntries={showMonthlyEntries}
       />
-      <EntryForm
-        selectedCategory={selectedCategory}
-        inputValue={inputValue}
-        onCategoryChange={setSelectedCategory}
-        onInputChange={handleInputChange}
-        handleAddEntry={handleAddEntry}
-        handleUpdateEntry={handleUpdateEntry}
-        editEntry={editEntry !== null}
-        date={date}
-        onDateChange={setDate}
-        remarks={remarks}
-        onRemarksChange={handleRemarksChange}
-      />
       {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} currentMonth={date.substring(0, 7)} />}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-4 rounded-lg">
+            <h2 className="text-xl mb-4">{editEntry ? 'Eintrag bearbeiten' : 'Neuen Eintrag hinzufügen'}</h2>
+            <EntryForm
+              selectedCategory={selectedCategory}
+              inputValue={inputValue}
+              onCategoryChange={setSelectedCategory}
+              onInputChange={handleInputChange}
+              handleAddEntry={handleAddEntry}
+              handleUpdateEntry={handleUpdateEntry}
+              editEntry={editEntry !== null}
+              date={date}
+              onDateChange={setDate}
+              remarks={remarks}
+              onRemarksChange={handleRemarksChange}
+            />
+            <button
+              onClick={() => setShowModal(false)}
+              className="bg-red-500 text-white py-2 px-4 rounded mt-4"
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
       <div className="fixed bottom-0 left-0 w-full flex justify-around bg-white p-4">
-        <button className="bg-blue-500 text-white py-2 px-4 rounded">
-          Monatsansicht
+      <button
+        onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
+        className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
+      >
+        {showMonthlyEntries ? 'Tagesansicht':'Monatsansicht'}
+      </button>
+
+
+        <button
+          onClick={openModalForToday} // This line ensures the button opens the modal for today
+          className="bg-blue-500 text-white py-2 px-4 rounded"
+        >
+          <i className="fa-regular fa-calendar-plus"></i>
         </button>
-        <button className="bg-blue-500 text-white py-2 px-4 rounded">
-          Eintragen
-        </button>
-</div>
+      </div>
     </div>
   );
 }

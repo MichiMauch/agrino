@@ -6,11 +6,11 @@ type EntryFormProps = {
   date: string;
   selectedCategory: string;
   inputValue: string;
-  remarks: string; // Add remarks prop
+  remarks: string;
   onDateChange: (date: string) => void;
   onCategoryChange: (category: string) => void;
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onRemarksChange: (e: ChangeEvent<HTMLTextAreaElement>) => void; // Add onRemarksChange prop
+  onRemarksChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   handleAddEntry: () => void;
   handleUpdateEntry: () => void;
   editEntry: boolean;
@@ -41,7 +41,6 @@ export default function EntryForm({
       }}
       className="space-y-4"
     >
-      
       <div>
         <label className="block text-xl font-medium">Kategorie</label>
         <select
@@ -61,7 +60,9 @@ export default function EntryForm({
       </div>
       {selectedCategory && !['ferien', 'unfall', 'schule', 'dienst'].includes(selectedCategory) && (
         <div>
-          <label className="block text-xl font-medium">Ausgewählte Kategorie: {categories.find(cat => cat.value === selectedCategory)?.label}</label>
+          <label className="block text-xl font-medium">
+            Ausgewählte Kategorie: {categories.find(cat => cat.value === selectedCategory)?.label}
+          </label>
           <input
             type="number"
             value={inputValue}
@@ -71,7 +72,7 @@ export default function EntryForm({
           />
           <textarea
             value={remarks}
-            onChange={(e) => {onRemarksChange(e); console.log("Bemerkung geändert im Formular:", e.target.value);}} // Log the change of remarks in the form
+            onChange={(e) => {onRemarksChange(e); console.log("Bemerkung geändert im Formular:", e.target.value);}}
             rows={3}
             className="mt-1 block w-full"
             placeholder="Bemerkungen"
