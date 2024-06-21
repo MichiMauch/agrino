@@ -19,7 +19,7 @@ const CalendarComponent: React.FC<CalendarComponentProps> = ({ onDateClick, onAc
       return (
         <div className="flex flex-col items-center">
           {hours > 0 ? (
-            <span className="text-sm text-blue-500">{hours}h</span>
+            <span className="text-sm text-blue-500 font-bold">{hours}h</span>
           ) : (
             <span className="invisible text-sm">0h</span>
           )}

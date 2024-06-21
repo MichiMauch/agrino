@@ -309,6 +309,14 @@ export default function FillHours() {
         onRemarksChange={handleRemarksChange}
       />
       {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} currentMonth={date.substring(0, 7)} />}
+      <div className="fixed bottom-0 left-0 w-full flex justify-around bg-white p-4">
+        <button className="bg-blue-500 text-white py-2 px-4 rounded">
+          Monatsansicht
+        </button>
+        <button className="bg-blue-500 text-white py-2 px-4 rounded">
+          Eintragen
+        </button>
+</div>
     </div>
   );
 }
