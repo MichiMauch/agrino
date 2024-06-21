@@ -228,41 +228,6 @@ export default function FillHours() {
     }
   };
 
-  const handleSaveEntry = async (updatedEntry: EntryType) => {
-    console.log('Saving entry with ID:', updatedEntry._id);
-    try {
-      const response = await fetch(`/api/hours`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: updatedEntry._id, hours: updatedEntry.hours, remarks: updatedEntry.remarks }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setEntriesByDate((prevEntriesByDate) => {
-          const dateEntries = prevEntriesByDate[updatedEntry.date].map((entry) =>
-            entry._id === updatedEntry._id ? updatedEntry : entry
-          );
-          return {
-            ...prevEntriesByDate,
-            [updatedEntry.date]: dateEntries,
-          };
-        });
-        setConfirmationMessage('Eintrag erfolgreich aktualisiert!');
-        setTimeout(() => setConfirmationMessage(''), 3000);
-        setShowModal(false); // Hide modal after saving entry
-      }
-    } catch (error) {
-      console.error('Error saving entry:', error.message);
-    }
-  };
-
   const openModalForToday = () => {
     const today = new Date().toISOString().split('T')[0];
     setDate(today);
@@ -318,7 +283,6 @@ export default function FillHours() {
         entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
         handleEditEntry={handleEditEntry}
         handleDeleteEntry={handleDeleteEntry}
-        handleSaveEntry={handleSaveEntry}
         showMonthlyEntries={showMonthlyEntries}
       />
       {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} month={date.split('-')[1]} year={date.split('-')[0]} />}
