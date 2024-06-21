@@ -20,7 +20,15 @@ type EntryListProps = {
   saveRemarks: (date: string) => void;
 };
 
-const EntryList: React.FC<EntryListProps> = ({ entriesByDate, handleEditEntry, handleDeleteEntry, showMonthlyEntries, remarksByDate, handleRemarksChange, saveRemarks }) => {
+const EntryList: React.FC<EntryListProps> = ({
+  entriesByDate,
+  handleEditEntry,
+  handleDeleteEntry,
+  showMonthlyEntries,
+  remarksByDate,
+  handleRemarksChange,
+  saveRemarks
+}) => {
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
     return new Date(dateString).toLocaleDateString('de-DE', options);
@@ -48,7 +56,13 @@ const EntryList: React.FC<EntryListProps> = ({ entriesByDate, handleEditEntry, h
             <h3 className="text-lg font-bold mb-2">Einträge vom {formatDate(date)}</h3>
             <ul>
               {entriesByDate[date].map((entry) => (
-                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2">
+                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative">
+                  <div className="absolute top-2 right-2">
+                    <i
+                      className="fas fa-edit text-black text-2xl cursor-pointer"
+                      onClick={() => handleEditEntry(entry)}
+                    ></i>
+                  </div>
                   <div>
                     <div>
                       <strong>Kategorie:</strong> {entry.category}
@@ -56,12 +70,12 @@ const EntryList: React.FC<EntryListProps> = ({ entriesByDate, handleEditEntry, h
                     <div>
                       <strong>Stunden:</strong> {entry.hours}
                     </div>
-                    <button onClick={() => handleEditEntry(entry)} className="bg-yellow-500 text-white py-1 px-3 rounded mt-2">
-                      Bearbeiten
-                    </button>
-                    <button onClick={() => handleDeleteEntry(entry)} className="bg-red-500 text-white py-1 px-3 rounded mt-2 ml-2">
-                      Löschen
-                    </button>
+                    <div className="mt-2">
+                      <i
+                        className="fas fa-trash text-black text-sm cursor-pointer"
+                        onClick={() => handleDeleteEntry(entry)}
+                      ></i>
+                    </div>
                   </div>
                 </li>
               ))}
