@@ -1,8 +1,7 @@
-// page.tsx
-"use client";  // Stelle sicher, dass diese Direktive am Anfang der Datei steht
+"use client";
 
-import { useState, useEffect, ChangeEvent } from 'react';
-import SearchParamsProvider from '../components/SearchParamsProvider';
+import { useState, useEffect, ChangeEvent, ReactNode, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import EntryForm from '../components/EntryForm';
 import EntryList from '../components/EntryList';
 import CalendarComponent from '../components/CalendarComponent';
@@ -12,6 +11,8 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Image from 'next/image';
 import agrinoLogo from '/public/images/agrino_logo_web.png';
+
+const UserParamsProvider = dynamic(() => import('../components/UserParamsProvider'), { ssr: false });
 
 type HoursType = {
   [key: string]: number;
@@ -26,7 +27,7 @@ type EntryType = {
   user: number;
 };
 
-const FillHoursContent: React.FC<{ userId: number }> = ({ userId }) => {
+const FillHoursContent = ({ userId }: { userId: number }) => {
   const user = getUserById(userId);
   const [date, setDate] = useState<string>('');
   const [hours, setHours] = useState<HoursType>({});
@@ -66,6 +67,7 @@ const FillHoursContent: React.FC<{ userId: number }> = ({ userId }) => {
           }, {});
           setEntriesByDate(entriesByDate);
           setRemarksByDate(remarksByDate);
+          console.log('Fetched entries:', entriesByDate);
         }
       } catch (error) {
         console.error('Error fetching entries:', error);
@@ -296,7 +298,7 @@ const FillHoursContent: React.FC<{ userId: number }> = ({ userId }) => {
   }, {});
 
   return (
-    <div className="container mx-auto px-4 pb-20"> {/* Add padding to the bottom */}
+    <div className="container mx-auto px-4 pb-20">
       <div className="flex justify-center mb-4">
         <Image src={agrinoLogo} alt="Agrino Logo" width={100} height={100} />
       </div>
@@ -312,7 +314,6 @@ const FillHoursContent: React.FC<{ userId: number }> = ({ userId }) => {
         entriesByDate={dailyHours}
         locale="de"
       />
-      
       <EntryList
         entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
         handleEditEntry={handleEditEntry}
@@ -395,10 +396,20 @@ const FillHoursContent: React.FC<{ userId: number }> = ({ userId }) => {
   );
 };
 
-const FillHours = () => (
-  <SearchParamsProvider>
-    {(userId: number) => <FillHoursContent userId={userId} />}
-  </SearchParamsProvider>
-);
+const Page = () => {
+  const [userId, setUserId] = useState<number | null>(null);
 
-export default FillHours;
+  const handleUserIdResolved = (resolvedUserId: number) => {
+    setUserId(resolvedUserId);
+  };
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <UserParamsProvider onUserIdResolved={handleUserIdResolved}>
+        {(resolvedUserId: number) => userId !== null && <FillHoursContent userId={resolvedUserId} />}
+      </UserParamsProvider>
+    </Suspense>
+  );
+};
+
+export default Page;

@@ -3,19 +3,20 @@
 import { ReactNode, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-type SearchParamsProviderProps = {
+type UserParamsProviderProps = {
   children: (userId: number) => ReactNode;
+  onUserIdResolved: (userId: number) => void;
 };
 
-const SearchParamsProvider: React.FC<SearchParamsProviderProps> = ({ children }) => {
+const UserParamsProvider: React.FC<UserParamsProviderProps> = ({ children, onUserIdResolved }) => {
   const searchParams = useSearchParams();
   const userId = parseInt(searchParams?.get('user') || '1');
 
   useEffect(() => {
-    console.log(`UserId resolved: ${userId}`);
-  }, [userId]);
+    onUserIdResolved(userId);
+  }, [userId, onUserIdResolved]);
 
   return <>{children(userId)}</>;
 };
 
-export default SearchParamsProvider;
+export default UserParamsProvider;
