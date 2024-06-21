@@ -372,24 +372,24 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
           </div>
         </div>
       )}
-      <div className="fixed bottom-0 left-0 w-full flex justify-around p-4 bg-white">
+      <div className="fixed bottom-0 left-0 w-full flex justify-around p-4 bg-[#C8D300]">
         <button
           onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
           className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
         >
-          {showMonthlyEntries ? <i className="fas fa-list-ol"></i> : <i className="fas fa-calendar-alt"></i>}
+          {showMonthlyEntries ? <i className="fas fa-list-ol text-4xl"></i> : <i className="fas fa-calendar-alt text-4xl"></i>}
         </button>
         <button
           onClick={openModalForToday}
           className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
         >
-          <i className="fas fa-plus"></i>
+          <i className="fas fa-plus text-4xl"></i>
         </button>
         <button
           onClick={() => downloadMonth(0)}
           className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
         >
-          <i className="fas fa-file-download"></i>
+          <i className="fas fa-file-download text-4xl"></i>
         </button>
       </div>
     </div>
