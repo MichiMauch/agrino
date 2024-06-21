@@ -6,9 +6,11 @@ type EntryFormProps = {
   date: string;
   selectedCategory: string;
   inputValue: string;
+  remarks: string;
   onDateChange: (date: string) => void;
   onCategoryChange: (category: string) => void;
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onRemarksChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   handleAddEntry: () => void;
   handleUpdateEntry: () => void;
   editEntry: boolean;
@@ -18,9 +20,11 @@ export default function EntryForm({
   date,
   selectedCategory,
   inputValue,
+  remarks,
   onDateChange,
   onCategoryChange,
   onInputChange,
+  onRemarksChange,
   handleAddEntry,
   handleUpdateEntry,
   editEntry
@@ -65,6 +69,13 @@ export default function EntryForm({
             onChange={onInputChange}
             className="mt-1 block w-full"
             placeholder="Anzahl Stunden"
+          />
+          <textarea
+            value={remarks}
+            onChange={onRemarksChange}
+            rows={3}
+            className="mt-1 block w-full"
+            placeholder="Bemerkungen"
           />
           {editEntry ? (
             <button

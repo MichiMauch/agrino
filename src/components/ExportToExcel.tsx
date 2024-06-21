@@ -10,6 +10,7 @@ type EntryType = {
   date: string;
   category: string;
   hours: number;
+  remarks?: string;
   user: number;
 };
 
@@ -36,7 +37,7 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
     wsData.push([]);
 
     // Header
-    const header = ['Datum', ...categories.map(cat => cat.label), 'Tagesgesamt'];
+    const header = ['Datum', ...categories.map(cat => cat.label), 'Tagesgesamt', 'Bemerkungen'];
     wsData.push(header);
 
     // Rows
@@ -47,12 +48,17 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
       const formattedDate = format(parseISO(date), 'EEEE, dd.MM.', { locale: de });
       const row = [formattedDate];
       let dayTotal = 0;
+      let remarks = '';
 
       categories.forEach(category => {
         const entry = entriesByDate[date]?.find(entry => entry.category === category.value);
         const hours = entry ? entry.hours : 0;
         row.push(hours > 0 ? hours.toString() : ''); // Ensure the value is a string and empty if 0
         dayTotal += hours;
+
+        if (entry && entry.remarks) {
+          remarks = entry.remarks;
+        }
 
         if (!categoryTotals[category.value]) {
           categoryTotals[category.value] = 0;
@@ -61,6 +67,7 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
       });
 
       row.push(dayTotal > 0 ? dayTotal.toString() : ''); // Ensure the day total is empty if 0
+      row.push(remarks);
       wsData.push(row);
     }
 
@@ -73,6 +80,7 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
       overallTotal += total;
     });
     totalsRow.push(overallTotal > 0 ? overallTotal.toString() : ''); // Ensure the overall total is empty if 0
+    totalsRow.push(''); // Empty cell for remarks column
     wsData.push([]);
     wsData.push(totalsRow);
 

@@ -20,6 +20,7 @@ type EntryType = {
   date: string;
   category: string;
   hours: number;
+  remarks?: string;
   user: number;
 };
 
@@ -31,7 +32,9 @@ export default function FillHours() {
   const [hours, setHours] = useState<HoursType>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [inputValue, setInputValue] = useState<string>('');
+  const [remarks, setRemarks] = useState<string>('');
   const [entriesByDate, setEntriesByDate] = useState<{ [key: string]: EntryType[] }>({});
+  const [remarksByDate, setRemarksByDate] = useState<{ [key: string]: string }>({});
   const [responseData, setResponseData] = useState<any>(null);
   const [editEntry, setEditEntry] = useState<EntryType | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
@@ -57,7 +60,12 @@ export default function FillHours() {
             acc[entry.date] = dateEntries;
             return acc;
           }, {});
+          const remarksByDate = entries.reduce((acc: { [key: string]: string }, entry: EntryType) => {
+            acc[entry.date] = entry.remarks || '';
+            return acc;
+          }, {});
           setEntriesByDate(entriesByDate);
+          setRemarksByDate(remarksByDate);
         }
       } catch (error) {
         console.error('Error fetching entries:', error);
@@ -84,11 +92,47 @@ export default function FillHours() {
     setInputValue(e.target.value);
   };
 
+  const handleRemarksChange = (e: ChangeEvent<HTMLTextAreaElement>, date: string) => {
+    const newRemarks = e.target.value;
+    setRemarksByDate((prevRemarks) => ({
+      ...prevRemarks,
+      [date]: newRemarks,
+    }));
+  };
+
+  const saveRemarks = async (date: string) => {
+    try {
+      const newRemarks = remarksByDate[date];
+      const response = await fetch('/api/hours', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ date, remarks: newRemarks }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setConfirmationMessage('Bemerkung erfolgreich gespeichert!');
+        setTimeout(() => setConfirmationMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving remarks:', error.message);
+    }
+  };
+
   const handleAddEntry = async () => {
+    console.log("Bemerkung beim Hinzufügen:", remarks);
+
     const newEntry: EntryType = {
       date,
       category: selectedCategory,
       hours: parseFloat(inputValue),
+      remarks,
       user: userId,
     };
 
@@ -103,7 +147,7 @@ export default function FillHours() {
 
       const data = await response.json();
       if (data.success) {
-        const createdEntry = { ...newEntry, _id: data.data._id };
+        const createdEntry = { ...newEntry, _id: data.data._id, remarks: data.data.remarks };
         setEntriesByDate((prevEntriesByDate) => {
           const dateEntries = prevEntriesByDate[date] || [];
           return {
@@ -116,6 +160,7 @@ export default function FillHours() {
 
         setSelectedCategory('');
         setInputValue('');
+        setRemarks('');
         setShowModal(false); // Hide modal after adding entry
       }
     } catch (error) {
@@ -126,12 +171,17 @@ export default function FillHours() {
   const handleUpdateEntry = async () => {
     if (!editEntry) return;
 
+    console.log("Bemerkung beim Aktualisieren:", remarks);
+
     const updatedEntry: EntryType = {
       ...editEntry,
       date,
       category: selectedCategory,
       hours: parseFloat(inputValue),
+      remarks,
     };
+
+    console.log('Updating entry with ID:', editEntry._id);
 
     try {
       const response = await fetch(`/api/hours`, {
@@ -139,7 +189,7 @@ export default function FillHours() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: updatedEntry._id, hours: updatedEntry.hours }),
+        body: JSON.stringify({ id: updatedEntry._id, hours: updatedEntry.hours, remarks: updatedEntry.remarks }),
       });
 
       if (!response.ok) {
@@ -162,6 +212,7 @@ export default function FillHours() {
 
         setSelectedCategory('');
         setInputValue('');
+        setRemarks('');
         setEditEntry(null);
         setShowModal(false); // Hide modal after updating entry
       }
@@ -175,11 +226,14 @@ export default function FillHours() {
     setDate(entry.date);
     setSelectedCategory(entry.category);
     setInputValue(entry.hours.toString());
+    setRemarks(entry.remarks || '');
     setShowModal(true); // Show modal when editing an entry
+    console.log("Bemerkung beim Bearbeiten:", entry.remarks);
   };
 
   const handleDeleteEntry = async (entry: EntryType) => {
     try {
+      console.log('Deleting entry with ID:', entry._id);
       const response = await fetch(`/api/hours?id=${entry._id}`, {
         method: 'DELETE',
         headers: {
@@ -264,6 +318,9 @@ export default function FillHours() {
         handleEditEntry={handleEditEntry}
         handleDeleteEntry={handleDeleteEntry}
         showMonthlyEntries={showMonthlyEntries}
+        remarksByDate={remarksByDate}
+        handleRemarksChange={handleRemarksChange}
+        saveRemarks={saveRemarks}
       />
       {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} month={date.split('-')[1]} year={date.split('-')[0]} />}
       {showModal && (
@@ -280,6 +337,8 @@ export default function FillHours() {
               editEntry={editEntry !== null}
               date={date}
               onDateChange={setDate}
+              remarks={remarks}
+              onRemarksChange={(e) => handleRemarksChange(e, date)}
             />
             <button
               onClick={() => setShowModal(false)}

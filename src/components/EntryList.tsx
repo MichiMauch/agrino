@@ -1,11 +1,12 @@
 "use client";
-import React from 'react';
+import React, { ChangeEvent } from 'react';
 
 type EntryType = {
   _id?: string;
   date: string;
   category: string;
   hours: number;
+  remarks?: string;
   user: number;
 };
 
@@ -14,9 +15,12 @@ type EntryListProps = {
   handleEditEntry: (entry: EntryType) => void;
   handleDeleteEntry: (entry: EntryType) => void;
   showMonthlyEntries: boolean;
+  remarksByDate: { [key: string]: string };
+  handleRemarksChange: (e: ChangeEvent<HTMLTextAreaElement>, date: string) => void;
+  saveRemarks: (date: string) => void;
 };
 
-const EntryList: React.FC<EntryListProps> = ({ entriesByDate, handleEditEntry, handleDeleteEntry, showMonthlyEntries }) => {
+const EntryList: React.FC<EntryListProps> = ({ entriesByDate, handleEditEntry, handleDeleteEntry, showMonthlyEntries, remarksByDate, handleRemarksChange, saveRemarks }) => {
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
     return new Date(dateString).toLocaleDateString('de-DE', options);
@@ -62,6 +66,19 @@ const EntryList: React.FC<EntryListProps> = ({ entriesByDate, handleEditEntry, h
                 </li>
               ))}
             </ul>
+            <div>
+              <strong>Bemerkungen:</strong>
+              <textarea
+                value={remarksByDate[date] || ''}
+                onChange={(e) => handleRemarksChange(e, date)}
+                rows={3}
+                className="mt-1 block w-full"
+                placeholder="Bemerkungen"
+              />
+              <button onClick={() => saveRemarks(date)} className="bg-blue-500 text-white py-1 px-3 rounded mt-2">
+                Speichern
+              </button>
+            </div>
             <div className="font-bold mt-2">Total Stunden am {formatDate(date)}: {entriesByDate[date].reduce((sum, entry) => sum + entry.hours, 0)}</div>
           </div>
         ))

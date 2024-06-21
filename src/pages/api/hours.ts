@@ -27,9 +27,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             break;
         case 'PUT':
             try {
-                const { id, hours } = req.body;
-                const updatedHour = await Hour.findByIdAndUpdate(id, { hours }, { new: true });
-                res.status(200).json({ success: true, data: updatedHour });
+                const { id, hours, remarks, date } = req.body;
+                if (id) {
+                    const updatedHour = await Hour.findByIdAndUpdate(id, { hours, remarks }, { new: true });
+                    res.status(200).json({ success: true, data: updatedHour });
+                } else if (date && remarks !== undefined) {
+                    const result = await Hour.updateMany({ date }, { remarks });
+                    res.status(200).json({ success: true, data: result });
+                } else {
+                    throw new Error('Invalid request');
+                }
             } catch (error) {
                 res.status(400).json({ success: false, error });
             }
@@ -37,7 +44,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         case 'DELETE':
             try {
                 const { id } = req.query;
-                console.log('Deleting entry with ID:', id);
                 const deletedHour = await Hour.findByIdAndDelete(id);
                 res.status(200).json({ success: true, data: deletedHour });
             } catch (error) {
