@@ -1,5 +1,7 @@
 "use client";
 import React, { ChangeEvent } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 type EntryType = {
   _id?: string;
@@ -54,14 +56,18 @@ const EntryList: React.FC<EntryListProps> = ({
         sortedDates.map((date) => (
           <div key={date} className="mb-4">
             <h3 className="text-lg font-bold mb-2">Einträge vom {formatDate(date)}</h3>
-            <ul>
+            <ul className="mx-[-16px]"> {/* Negative margin to make the ul stretch to the edges */}
               {entriesByDate[date].map((entry) => (
-                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative">
+                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative bg-gray-200 w-full">
                   <div className="absolute top-2 right-2">
-                    <i
-                      className="fas fa-edit text-black text-2xl cursor-pointer"
-                      onClick={() => handleEditEntry(entry)}
-                    ></i>
+                    <FontAwesomeIcon
+                      icon={faEdit}
+                      className="text-black text-2xl cursor-pointer"
+                      onClick={() => {
+                        console.log('Edit icon clicked for entry:', entry);
+                        handleEditEntry(entry);
+                      }}
+                    />
                   </div>
                   <div>
                     <div>
@@ -71,10 +77,14 @@ const EntryList: React.FC<EntryListProps> = ({
                       <strong>Stunden:</strong> {entry.hours}
                     </div>
                     <div className="mt-2">
-                      <i
-                        className="fas fa-trash text-black text-sm cursor-pointer"
-                        onClick={() => handleDeleteEntry(entry)}
-                      ></i>
+                      <FontAwesomeIcon
+                        icon={faTrash}
+                        className="text-black text-sm cursor-pointer"
+                        onClick={() => {
+                          console.log('Delete icon clicked for entry:', entry);
+                          handleDeleteEntry(entry);
+                        }}
+                      />
                     </div>
                   </div>
                 </li>
