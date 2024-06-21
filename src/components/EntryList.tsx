@@ -6,7 +6,6 @@ type EntryType = {
   date: string;
   category: string;
   hours: number;
-  remarks: string;
   user: number;
 };
 
@@ -52,9 +51,6 @@ const EntryList: React.FC<EntryListProps> = ({ entriesByDate, handleEditEntry, h
                     </div>
                     <div>
                       <strong>Stunden:</strong> {entry.hours}
-                    </div>
-                    <div>
-                      <strong>Bemerkungen:</strong> {entry.remarks}
                     </div>
                     <button onClick={() => handleEditEntry(entry)} className="bg-yellow-500 text-white py-1 px-3 rounded mt-2">
                       Bearbeiten

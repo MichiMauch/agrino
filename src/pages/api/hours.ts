@@ -19,7 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             break;
         case 'POST':
             try {
-                console.log("Bemerkung im Backend beim Hinzufügen:", req.body.remarks); // Log the remarks in the backend when adding
                 const hour = await Hour.create(req.body);
                 res.status(201).json({ success: true, data: hour });
             } catch (error) {
@@ -28,9 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             break;
         case 'PUT':
             try {
-                const { id, hours, remarks } = req.body;
-                console.log("Bemerkung im Backend beim Aktualisieren:", remarks); // Log the remarks in the backend when updating
-                const updatedHour = await Hour.findByIdAndUpdate(id, { hours, remarks }, { new: true });
+                const { id, hours } = req.body;
+                const updatedHour = await Hour.findByIdAndUpdate(id, { hours }, { new: true });
                 res.status(200).json({ success: true, data: updatedHour });
             } catch (error) {
                 res.status(400).json({ success: false, error });
