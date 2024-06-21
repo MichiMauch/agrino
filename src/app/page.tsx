@@ -39,6 +39,7 @@ export default function FillHours() {
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
   const [showMonthlyEntries, setShowMonthlyEntries] = useState<boolean>(false);
   const [showModal, setShowModal] = useState<boolean>(false); // Modal visibility state
+  const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false); // New modal for download buttons
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -266,6 +267,14 @@ export default function FillHours() {
     setShowModal(true);
   };
 
+  const downloadMonth = (monthOffset: number) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - monthOffset);
+    const formattedDate = format(date, 'yyyy-MM');
+    // call your download function here with formattedDate
+    console.log(`Download for month: ${formattedDate}`);
+  };
+
   const filteredEntries = entriesByDate[date] || [];
 
   const monthlyEntries = Object.keys(entriesByDate).reduce((acc: { [key: string]: EntryType[] }, key) => {
@@ -281,7 +290,7 @@ export default function FillHours() {
   }, {});
 
   return (
-    <div className="container mx-auto px-4 pb-20">
+    <div className="container mx-auto px-4 pb-20"> {/* Add padding to the bottom */}
       <div className="flex justify-center mb-4">
         <Image src={agrinoLogo} alt="Agrino Logo" width={100} height={100} />
       </div>
@@ -332,20 +341,55 @@ export default function FillHours() {
           </div>
         </div>
       )}
+      {showDownloadModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-4 rounded-lg">
+            <h2 className="text-xl mb-4">Monatsberichte herunterladen</h2>
+            <button
+              onClick={() => downloadMonth(0)}
+              className="bg-blue-500 text-white py-2 px-4 rounded mb-2"
+            >
+              Aktuellen Monat herunterladen
+            </button>
+            <button
+              onClick={() => downloadMonth(1)}
+              className="bg-blue-500 text-white py-2 px-4 rounded mb-2"
+            >
+              Letzten Monat herunterladen
+            </button>
+            <button
+              onClick={() => downloadMonth(2)}
+              className="bg-blue-500 text-white py-2 px-4 rounded mb-2"
+            >
+              Vorletzten Monat herunterladen
+            </button>
+            <button
+              onClick={() => setShowDownloadModal(false)}
+              className="bg-red-500 text-white py-2 px-4 rounded mt-4"
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
       <div className="fixed bottom-0 left-0 w-full flex justify-around bg-white p-4">
-      <button
-        onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
-        className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
-      >
-        {showMonthlyEntries ? 'Tagesansicht':'Monatsansicht'}
-      </button>
-
-
         <button
-          onClick={openModalForToday} // This line ensures the button opens the modal for today
+          onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
+          className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
+        >
+          {showMonthlyEntries ? <i className="fas fa-list-ol"></i> : <i className="fas fa-calendar-alt"></i>}
+        </button>
+        <button
+          onClick={openModalForToday}
           className="bg-blue-500 text-white py-2 px-4 rounded"
         >
-          <i className="fa-regular fa-calendar-plus"></i>
+          <i className="fas fa-plus"></i>
+        </button>
+        <button
+          onClick={() => setShowDownloadModal(true)} // Opens the download modal
+          className="bg-blue-500 text-white py-2 px-4 rounded"
+        >
+          <i className="fas fa-download"></i>
         </button>
       </div>
     </div>
