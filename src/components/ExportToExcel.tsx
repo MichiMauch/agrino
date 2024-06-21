@@ -16,21 +16,19 @@ type EntryType = {
 
 type ExportToExcelProps = {
   entriesByDate: { [key: string]: EntryType[] };
-  currentMonth: string;
+  month: string;
+  year: string;
 };
 
-const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, currentMonth }) => {
-  // Monat aus currentMonth extrahieren und formatieren
-  const year = parseInt(currentMonth.split('-')[0], 10);
-  const month = parseInt(currentMonth.split('-')[1], 10);
-  const monthDate = new Date(year, month - 1); // Monat ist 0-basiert
+const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, year }) => {
+  const monthDate = new Date(parseInt(year), parseInt(month) - 1); // Monat ist 0-basiert
   const monthName = format(monthDate, 'MMMM', { locale: de });
 
   const handleExport = () => {
     const wb = XLSX.utils.book_new();
     const wsData: any[][] = [];
 
-    const daysInMonth = new Date(year, month, 0).getDate();
+    const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
 
     // Titelzeile
     wsData.push([`Agrino Monatsrapport ${monthName} ${year}`]);
@@ -46,7 +44,7 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, currentMon
     const categoryTotals: { [key: string]: number } = {};
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = `${currentMonth}-${day.toString().padStart(2, '0')}`;
+      const date = `${year}-${month}-${day.toString().padStart(2, '0')}`;
       const formattedDate = format(parseISO(date), 'EEEE, dd.MM.', { locale: de });
       const row = [formattedDate];
       let dayTotal = 0;
@@ -90,7 +88,7 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, currentMon
     XLSX.utils.book_append_sheet(wb, ws, 'Monatsrapport');
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    saveAs(blob, `Monatsrapport_${currentMonth}.xlsx`);
+    saveAs(blob, `Monatsrapport_${year}-${month}.xlsx`);
   };
 
   return (

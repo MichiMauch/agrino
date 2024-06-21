@@ -6,7 +6,7 @@ import EntryList from '../components/EntryList';
 import CalendarComponent from '../components/CalendarComponent';
 import users, { getUserById } from '../lib/users';
 import ExportToExcel from '../components/ExportToExcel';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Image from 'next/image';
 import agrinoLogo from '/public/images/agrino_logo_web.png';
@@ -39,7 +39,9 @@ export default function FillHours() {
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
   const [showMonthlyEntries, setShowMonthlyEntries] = useState<boolean>(false);
   const [showModal, setShowModal] = useState<boolean>(false); // Modal visibility state
-  const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false); // New modal for download buttons
+  const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<string>('');
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -271,8 +273,13 @@ export default function FillHours() {
     const date = new Date();
     date.setMonth(date.getMonth() - monthOffset);
     const formattedDate = format(date, 'yyyy-MM');
-    // call your download function here with formattedDate
-    console.log(`Download for month: ${formattedDate}`);
+    setSelectedMonth(formattedDate.split('-')[1]);
+    setSelectedYear(formattedDate.split('-')[0]);
+    setShowDownloadModal(true);
+  };
+
+  const closeModal = () => {
+    setShowDownloadModal(false);
   };
 
   const filteredEntries = entriesByDate[date] || [];
@@ -314,7 +321,7 @@ export default function FillHours() {
         handleSaveEntry={handleSaveEntry}
         showMonthlyEntries={showMonthlyEntries}
       />
-      {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} currentMonth={date.substring(0, 7)} />}
+      {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} month={date.split('-')[1]} year={date.split('-')[0]} />}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded-lg">
@@ -345,26 +352,17 @@ export default function FillHours() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded-lg">
             <h2 className="text-xl mb-4">Monatsberichte herunterladen</h2>
+            {[0, 1, 2, 3].map(offset => {
+              const date = new Date();
+              date.setMonth(date.getMonth() - offset);
+              const month = format(date, 'MM');
+              const year = format(date, 'yyyy');
+              return (
+                <ExportToExcel key={offset} entriesByDate={entriesByDate} month={month} year={year} />
+              );
+            })}
             <button
-              onClick={() => downloadMonth(0)}
-              className="bg-blue-500 text-white py-2 px-4 rounded mb-2"
-            >
-              Aktuellen Monat herunterladen
-            </button>
-            <button
-              onClick={() => downloadMonth(1)}
-              className="bg-blue-500 text-white py-2 px-4 rounded mb-2"
-            >
-              Letzten Monat herunterladen
-            </button>
-            <button
-              onClick={() => downloadMonth(2)}
-              className="bg-blue-500 text-white py-2 px-4 rounded mb-2"
-            >
-              Vorletzten Monat herunterladen
-            </button>
-            <button
-              onClick={() => setShowDownloadModal(false)}
+              onClick={closeModal}
               className="bg-red-500 text-white py-2 px-4 rounded mt-4"
             >
               Abbrechen
@@ -380,16 +378,16 @@ export default function FillHours() {
           {showMonthlyEntries ? <i className="fas fa-list-ol"></i> : <i className="fas fa-calendar-alt"></i>}
         </button>
         <button
-          onClick={openModalForToday}
+          onClick={openModalForToday} // This line ensures the button opens the modal for today
           className="bg-blue-500 text-white py-2 px-4 rounded"
         >
           <i className="fas fa-plus"></i>
         </button>
         <button
-          onClick={() => setShowDownloadModal(true)} // Opens the download modal
+          onClick={() => downloadMonth(0)} // This line ensures the button opens the modal for download options
           className="bg-blue-500 text-white py-2 px-4 rounded"
         >
-          <i className="fas fa-download"></i>
+          <i className="fas fa-file-download"></i>
         </button>
       </div>
     </div>
