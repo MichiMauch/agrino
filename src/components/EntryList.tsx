@@ -58,7 +58,7 @@ const EntryList: React.FC<EntryListProps> = ({
             <h3 className="text-lg font-bold mb-2">Einträge vom {formatDate(date)}</h3>
             <ul className="mx-[-16px]"> {/* Negative margin to make the ul stretch to the edges */}
               {entriesByDate[date].map((entry) => (
-                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative bg-gray-200 w-full">
+                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative bg-customYellow-100 w-full">
                   <div className="absolute top-2 right-2">
                     <FontAwesomeIcon
                       icon={faEdit}
@@ -90,7 +90,7 @@ const EntryList: React.FC<EntryListProps> = ({
                 </li>
               ))}
             </ul>
-            <div>
+            <div className="mx-[-16px] bg-customYellow-100 p-2"> {/* Same styling as li elements */}
               <strong>Bemerkungen:</strong>
               <textarea
                 value={remarksByDate[date] || ''}
