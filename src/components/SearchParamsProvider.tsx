@@ -1,22 +1,21 @@
-// components/SearchParamsProvider.tsx
 "use client";
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 type SearchParamsProviderProps = {
-  children: ReactNode;
-  onUserIdResolved: (userId: number) => void;
+  children: (userId: number) => ReactNode;
 };
 
-const SearchParamsProvider: React.FC<SearchParamsProviderProps> = ({ children, onUserIdResolved }) => {
+const SearchParamsProvider: React.FC<SearchParamsProviderProps> = ({ children }) => {
   const searchParams = useSearchParams();
   const userId = parseInt(searchParams?.get('user') || '1');
-  
-  // Call the callback function when userId is resolved
-  onUserIdResolved(userId);
 
-  return <>{children}</>;
+  useEffect(() => {
+    console.log(`UserId resolved: ${userId}`);
+  }, [userId]);
+
+  return <>{children(userId)}</>;
 };
 
 export default SearchParamsProvider;

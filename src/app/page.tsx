@@ -1,6 +1,8 @@
-"use client";
+// page.tsx
+"use client";  // Stelle sicher, dass diese Direktive am Anfang der Datei steht
+
 import { useState, useEffect, ChangeEvent } from 'react';
-import { useSearchParams } from 'next/navigation';
+import SearchParamsProvider from '../components/SearchParamsProvider';
 import EntryForm from '../components/EntryForm';
 import EntryList from '../components/EntryList';
 import CalendarComponent from '../components/CalendarComponent';
@@ -24,9 +26,7 @@ type EntryType = {
   user: number;
 };
 
-export default function FillHours() {
-  const searchParams = useSearchParams();
-  const userId = parseInt(searchParams?.get('user') || '1');
+const FillHoursContent: React.FC<{ userId: number }> = ({ userId }) => {
   const user = getUserById(userId);
   const [date, setDate] = useState<string>('');
   const [hours, setHours] = useState<HoursType>({});
@@ -371,27 +371,34 @@ export default function FillHours() {
           </div>
         </div>
       )}
-<div className="fixed bottom-0 left-0 w-full flex justify-around p-4 bg-white">
-  <button
-    onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
-    className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
-  >
-    {showMonthlyEntries ? <i className="fas fa-list-ol"></i> : <i className="fas fa-calendar-alt"></i>}
-  </button>
-  <button
-    onClick={openModalForToday}
-    className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
-  >
-    <i className="fas fa-plus"></i>
-  </button>
-  <button
-    onClick={() => downloadMonth(0)}
-    className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
-  >
-    <i className="fas fa-file-download"></i>
-  </button>
-</div>
-
+      <div className="fixed bottom-0 left-0 w-full flex justify-around p-4 bg-white">
+        <button
+          onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
+          className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
+        >
+          {showMonthlyEntries ? <i className="fas fa-list-ol"></i> : <i className="fas fa-calendar-alt"></i>}
+        </button>
+        <button
+          onClick={openModalForToday}
+          className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
+        >
+          <i className="fas fa-plus"></i>
+        </button>
+        <button
+          onClick={() => downloadMonth(0)}
+          className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
+        >
+          <i className="fas fa-file-download"></i>
+        </button>
+      </div>
     </div>
   );
-}
+};
+
+const FillHours = () => (
+  <SearchParamsProvider>
+    {(userId: number) => <FillHoursContent userId={userId} />}
+  </SearchParamsProvider>
+);
+
+export default FillHours;
