@@ -1,7 +1,7 @@
 "use client";
-import React, { ChangeEvent } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash, faSave } from '@fortawesome/free-solid-svg-icons';
 
 type EntryType = {
   _id?: string;
@@ -31,6 +31,9 @@ const EntryList: React.FC<EntryListProps> = ({
   handleRemarksChange,
   saveRemarks
 }) => {
+  const [showRemarksModal, setShowRemarksModal] = useState(false);
+  const [currentRemarksDate, setCurrentRemarksDate] = useState<string | null>(null);
+
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
     return new Date(dateString).toLocaleDateString('de-DE', options);
@@ -48,6 +51,23 @@ const EntryList: React.FC<EntryListProps> = ({
     return total;
   };
 
+  const openRemarksModal = (date: string) => {
+    setCurrentRemarksDate(date);
+    setShowRemarksModal(true);
+  };
+
+  const closeRemarksModal = () => {
+    setShowRemarksModal(false);
+    setCurrentRemarksDate(null);
+  };
+
+  const handleSaveRemarks = () => {
+    if (currentRemarksDate) {
+      saveRemarks(currentRemarksDate);
+      closeRemarksModal();
+    }
+  };
+
   return (
     <div>
       {sortedDates.length === 0 ? (
@@ -58,7 +78,7 @@ const EntryList: React.FC<EntryListProps> = ({
             <h3 className="text-lg font-bold mb-2">Einträge vom {formatDate(date)}</h3>
             <ul className="mx-[-16px]"> {/* Negative margin to make the ul stretch to the edges */}
               {entriesByDate[date].map((entry) => (
-                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative bg-white w-full">
+                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative bg-gray-200 w-full">
                   <div className="absolute top-2 right-2">
                     <FontAwesomeIcon
                       icon={faEdit}
@@ -90,25 +110,49 @@ const EntryList: React.FC<EntryListProps> = ({
                 </li>
               ))}
             </ul>
-            <div className="mx-[-16px] bg-white p-2"> {/* Same styling as li elements */}
+            <div className="mx-[-16px] bg-white p-2">
               <strong>Bemerkung:</strong>
-              <textarea
-                value={remarksByDate[date] || ''}
-                onChange={(e) => handleRemarksChange(e, date)}
-                rows={3}
-                className="mt-1 block w-full border border-gray-300"
-                placeholder="Bemerkungen"
-              />
-              <button onClick={() => saveRemarks(date)} className="bg-black text-white py-1 px-3 rounded mt-2">
-                Speichern
+              <p>{remarksByDate[date] || 'Keine Bemerkung'}</p>
+              <button
+                onClick={() => openRemarksModal(date)}
+                className="bg-customYellow-200 text-black py-1 px-3 rounded mt-2"
+              >
+                <FontAwesomeIcon icon={faEdit} className="text-2xl" />
               </button>
             </div>
-            <div className="font-bold mt-2">Total Stunden am {formatDate(date)}: {entriesByDate[date].reduce((sum, entry) => sum + entry.hours, 0)}</div>
           </div>
         ))
       )}
       {showMonthlyEntries && (
         <div className="font-bold text-xl mt-4">Monatstotal Stunden: {calculateTotalHours()}</div>
+      )}
+      {showRemarksModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white p-4 rounded-lg w-full max-w-lg">
+            <h2 className="text-xl mb-4">Bemerkung bearbeiten</h2>
+            <textarea
+              value={remarksByDate[currentRemarksDate!] || ''}
+              onChange={(e) => handleRemarksChange(e, currentRemarksDate!)}
+              rows={3}
+              className="mt-1 block w-full border border-gray-300"
+              placeholder="Bemerkungen"
+            />
+            <div className="flex justify-end mt-2 space-x-2">
+              <button
+                onClick={closeRemarksModal}
+                className="bg-red-500 text-white py-1 px-3 rounded"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleSaveRemarks}
+                className="bg-customYellow-200 text-black py-1 px-3 rounded"
+              >
+                <FontAwesomeIcon icon={faSave} className="text-2xl" />
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
