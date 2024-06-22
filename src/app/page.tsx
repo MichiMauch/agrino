@@ -10,6 +10,8 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Image from 'next/image';
 import agrinoLogo from '/public/images/agrino_logo_web.png';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
 type HoursType = {
   [key: string]: number;
@@ -39,7 +41,7 @@ export default function FillHours() {
   const [editEntry, setEditEntry] = useState<EntryType | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string>('');
   const [showMonthlyEntries, setShowMonthlyEntries] = useState<boolean>(false);
-  const [showModal, setShowModal] = useState<boolean>(false); // Modal visibility state
+  const [showModal, setShowModal] = useState<boolean>(false);
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>('');
@@ -80,7 +82,7 @@ export default function FillHours() {
     const dateString = adjustedDate.toISOString().split('T')[0];
     setDate(dateString);
     if (!entriesByDate[dateString] || entriesByDate[dateString].length === 0) {
-      setShowModal(true); // Show modal if no entries for the date
+      setShowModal(true);
     } else {
       setShowMonthlyEntries(false);
     }
@@ -161,7 +163,7 @@ export default function FillHours() {
         setSelectedCategory('');
         setInputValue('');
         setRemarks('');
-        setShowModal(false); // Hide modal after adding entry
+        setShowModal(false);
       }
     } catch (error) {
       console.error('Error adding entry:', error);
@@ -214,7 +216,7 @@ export default function FillHours() {
         setInputValue('');
         setRemarks('');
         setEditEntry(null);
-        setShowModal(false); // Hide modal after updating entry
+        setShowModal(false);
       }
     } catch (error) {
       console.error('Error updating entry:', error.message);
@@ -227,7 +229,7 @@ export default function FillHours() {
     setSelectedCategory(entry.category);
     setInputValue(entry.hours.toString());
     setRemarks(entry.remarks || '');
-    setShowModal(true); // Show modal when editing an entry
+    setShowModal(true);
     console.log("Bemerkung beim Bearbeiten:", entry.remarks);
   };
 
@@ -324,7 +326,7 @@ export default function FillHours() {
   }, {});
 
   return (
-    <div className="container mx-auto px-4 pb-20"> {/* Add padding to the bottom */}
+    <div className="container mx-auto px-4 pb-20">
       <div className="flex justify-center mb-4">
         <Image src={agrinoLogo} alt="Agrino Logo" width={100} height={100} />
       </div>
@@ -340,7 +342,6 @@ export default function FillHours() {
         entriesByDate={dailyHours}
         locale="de"
       />
-      
       <EntryList
         entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
         handleEditEntry={handleEditEntry}
@@ -351,12 +352,19 @@ export default function FillHours() {
         saveRemarks={saveRemarks}
         handleAddEntry={handleAddEntry}
         handleUpdateEntry={handleUpdateEntry}
-        deleteRemarks={deleteRemarks} // Pass deleteRemarks function
+        deleteRemarks={deleteRemarks}
       />
-      {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} month={date.split('-')[1]} year={date.split('-')[0]} />}
+      {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} month={date.split('-')[1]} year={date.split('-')[0]} userId={0} />}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white p-4 rounded-lg w-full max-w-lg">
+          <div className="bg-white p-4 rounded-lg w-full max-w-lg relative">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="absolute top-2 right-2 text-black text-xl"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
             <EntryForm
               selectedCategory={selectedCategory}
               inputValue={inputValue}
@@ -374,28 +382,40 @@ export default function FillHours() {
           </div>
         </div>
       )}
-      {showDownloadModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white p-4 rounded-lg">
-            <h2 className="text-xl mb-4">Monatsberichte herunterladen</h2>
-            {[0, 1, 2, 3].map(offset => {
-              const date = new Date();
-              date.setMonth(date.getMonth() - offset);
-              const month = format(date, 'MM');
-              const year = format(date, 'yyyy');
-              return (
-                <ExportToExcel key={offset} entriesByDate={entriesByDate} month={month} year={year} />
-              );
-            })}
-            <button
-              onClick={closeModal}
-              className="bg-red-500 text-white py-2 px-4 rounded mt-4"
-            >
-              Abbrechen
-            </button>
+{showDownloadModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+    <div className="bg-white p-4 rounded-lg">
+      <h2 className="text-xl mb-4">Monatsberichte herunterladen oder versenden</h2>
+      {[0, 1, 2, 3].map(offset => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - offset);
+        const month = format(date, 'MM');
+        const year = format(date, 'yyyy');
+        const monthName = format(date, 'MMMM', { locale: de });
+        return (
+          <div key={offset} className="mb-4 flex items-center justify-between">
+            <div className="w-1/4 text-lg">{monthName}:</div>
+            <div className="w-3/4">
+              <ExportToExcel entriesByDate={entriesByDate} month={month} year={year} userId={userId} />
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })}
+      <button
+        onClick={closeModal}
+        className="bg-red-500 text-white py-2 px-4 rounded mt-4"
+      >
+        Abbrechen
+      </button>
+    </div>
+  </div>
+)}
+
+
+
+
+
+
       <div className="fixed bottom-0 left-0 w-full flex justify-around p-4 bg-customYellow-400">
         <button
           onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}

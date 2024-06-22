@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { categories } from './CategorySelect';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDownload, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 
 type EntryType = {
   _id?: string;
@@ -18,29 +20,29 @@ type ExportToExcelProps = {
   entriesByDate: { [key: string]: EntryType[] };
   month: string;
   year: string;
+  userId: number;
 };
 
-const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, year }) => {
-  const monthDate = new Date(parseInt(year), parseInt(month) - 1); // Monat ist 0-basiert
+const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, year, userId }) => {
+  const [isSending, setIsSending] = useState(false);
+  const [sendTime, setSendTime] = useState<string | null>(null);
+
+  const monthDate = new Date(parseInt(year), parseInt(month) - 1);
   const monthName = format(monthDate, 'MMMM', { locale: de });
 
-  const handleExport = () => {
+  const createExcelFile = () => {
     const wb = XLSX.utils.book_new();
     const wsData: any[][] = [];
 
     const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
 
-    // Titelzeile
     wsData.push([`Agrino Monatsrapport ${monthName} ${year}`]);
 
-    // Leere Zeile nach dem Titel
     wsData.push([]);
 
-    // Header
     const header = ['Datum', ...categories.map(cat => cat.label), 'Tagesgesamt', 'Bemerkungen'];
     wsData.push(header);
 
-    // Rows
     const categoryTotals: { [key: string]: number } = {};
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -53,7 +55,7 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
       categories.forEach(category => {
         const entry = entriesByDate[date]?.find(entry => entry.category === category.value);
         const hours = entry ? entry.hours : 0;
-        row.push(hours > 0 ? hours.toString() : ''); // Ensure the value is a string and empty if 0
+        row.push(hours > 0 ? hours.toString() : '');
         dayTotal += hours;
 
         if (entry && entry.remarks) {
@@ -66,35 +68,82 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
         categoryTotals[category.value] += hours;
       });
 
-      row.push(dayTotal > 0 ? dayTotal.toString() : ''); // Ensure the day total is empty if 0
+      row.push(dayTotal > 0 ? dayTotal.toString() : '');
       row.push(remarks);
       wsData.push(row);
     }
 
-    // Totals row for categories
     const totalsRow = ['Gesamt'];
     let overallTotal = 0;
     categories.forEach(category => {
       const total = categoryTotals[category.value] || 0;
-      totalsRow.push(total > 0 ? total.toString() : ''); // Ensure the category total is empty if 0
+      totalsRow.push(total > 0 ? total.toString() : '');
       overallTotal += total;
     });
-    totalsRow.push(overallTotal > 0 ? overallTotal.toString() : ''); // Ensure the overall total is empty if 0
-    totalsRow.push(''); // Empty cell for remarks column
+    totalsRow.push(overallTotal > 0 ? overallTotal.toString() : '');
+    totalsRow.push('');
     wsData.push([]);
     wsData.push(totalsRow);
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     XLSX.utils.book_append_sheet(wb, ws, 'Monatsrapport');
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    return new Blob([excelBuffer], { type: 'application/octet-stream' });
+  };
+
+  const handleExport = () => {
+    const blob = createExcelFile();
     saveAs(blob, `Monatsrapport_${year}-${month}.xlsx`);
   };
 
+  const handleSendEmail = async () => {
+    setIsSending(true);
+    const blob = createExcelFile();
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = async () => {
+      const base64data = reader.result?.toString().split(',')[1];
+      try {
+        const response = await fetch(`/api/send-email?userId=${userId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            subject: `Monatsrapport ${monthName} ${year}`,
+            text: `Hier ist der Monatsrapport für ${monthName} ${year}.`,
+            attachment: base64data,
+          }),
+        });
+        if (response.ok) {
+          setSendTime(new Date().toLocaleString());
+        } else {
+          alert('Fehler beim Senden der E-Mail');
+        }
+      } catch (error) {
+        alert('Fehler beim Senden der E-Mail');
+      }
+      setIsSending(false);
+    };
+  };
+
   return (
-    <button onClick={handleExport} className="bg-blue-500 text-white py-2 px-4 rounded mb-4">
-      Daten herunterladen {monthName}
-    </button>
+    <div className="flex space-x-4 w-full items-center">
+      <div className="flex w-full space-x-4">
+        <button onClick={handleExport} className="bg-customYellow-200 text-black py-2 px-4 rounded flex items-center justify-center w-1/4">
+          <FontAwesomeIcon icon={faDownload} className="mr-2" />
+        </button>
+        <button onClick={handleSendEmail} className="bg-customYellow-200 text-black py-2 px-4 rounded flex items-center justify-center w-3/4" disabled={isSending}>
+          {isSending ? 'Senden...' : (
+            <>
+              <FontAwesomeIcon icon={faPaperPlane} className="mr-2" />
+              senden
+            </>
+          )}
+        </button>
+      </div>
+      {sendTime && <div className="text-sm text-gray-600 mt-2">Gesendet: {sendTime}</div>}
+    </div>
   );
 };
 
