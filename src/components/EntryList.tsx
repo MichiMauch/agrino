@@ -58,7 +58,7 @@ const EntryList: React.FC<EntryListProps> = ({
             <h3 className="text-lg font-bold mb-2">Einträge vom {formatDate(date)}</h3>
             <ul className="mx-[-16px]"> {/* Negative margin to make the ul stretch to the edges */}
               {entriesByDate[date].map((entry) => (
-                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative bg-customYellow-100 w-full">
+                <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative bg-white w-full">
                   <div className="absolute top-2 right-2">
                     <FontAwesomeIcon
                       icon={faEdit}
@@ -90,16 +90,16 @@ const EntryList: React.FC<EntryListProps> = ({
                 </li>
               ))}
             </ul>
-            <div className="mx-[-16px] bg-customYellow-100 p-2"> {/* Same styling as li elements */}
-              <strong>Bemerkungen:</strong>
+            <div className="mx-[-16px] bg-white p-2"> {/* Same styling as li elements */}
+              <strong>Bemerkung:</strong>
               <textarea
                 value={remarksByDate[date] || ''}
                 onChange={(e) => handleRemarksChange(e, date)}
                 rows={3}
-                className="mt-1 block w-full"
+                className="mt-1 block w-full border border-gray-300"
                 placeholder="Bemerkungen"
               />
-              <button onClick={() => saveRemarks(date)} className="bg-blue-500 text-white py-1 px-3 rounded mt-2">
+              <button onClick={() => saveRemarks(date)} className="bg-black text-white py-1 px-3 rounded mt-2">
                 Speichern
               </button>
             </div>

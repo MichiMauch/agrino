@@ -60,9 +60,7 @@ export default function EntryForm({
       </div>
       {selectedCategory && !['ferien', 'unfall', 'schule', 'dienst'].includes(selectedCategory) && (
         <div>
-          <label className="block text-xl font-medium">
-            Ausgewählte Kategorie: {categories.find(cat => cat.value === selectedCategory)?.label}
-          </label>
+          
           <input
             type="number"
             value={inputValue}
@@ -70,13 +68,7 @@ export default function EntryForm({
             className="mt-1 block w-full"
             placeholder="Anzahl Stunden"
           />
-          <textarea
-            value={remarks}
-            onChange={onRemarksChange}
-            rows={3}
-            className="mt-1 block w-full"
-            placeholder="Bemerkungen"
-          />
+          
           {editEntry ? (
             <button
               type="submit"
