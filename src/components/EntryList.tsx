@@ -50,14 +50,8 @@ const EntryList: React.FC<EntryListProps> = ({
 
   const sortedDates = Object.keys(entriesByDate).sort();
 
-  const calculateTotalHours = () => {
-    let total = 0;
-    sortedDates.forEach((date) => {
-      entriesByDate[date].forEach((entry) => {
-        total += entry.hours;
-      });
-    });
-    return total;
+  const calculateTotalHours = (date: string) => {
+    return entriesByDate[date]?.reduce((sum, entry) => sum + entry.hours, 0) || 0;
   };
 
   const openRemarksModal = (date: string) => {
@@ -91,7 +85,9 @@ const EntryList: React.FC<EntryListProps> = ({
       ) : (
         sortedDates.map((date) => (
           <div key={date} className="mb-4">
-            <h3 className="text-lg font-bold mb-2">Einträge vom {formatDate(date)}</h3>
+            <div className="w-screen bg-customYellow-400 text-white text-center text-2xl font-bold my-4 mx-[-16px] py-2">
+              {formatDate(date)} - {calculateTotalHours(date)}h
+            </div>
             <ul className="mx-[-16px]"> {/* Negative margin to make the ul stretch to the edges */}
               {entriesByDate[date].map((entry) => (
                 <li key={entry._id || `${date}-${entry.category}`} className="border p-2 my-2 relative bg-gray-200 w-full">
@@ -148,30 +144,29 @@ const EntryList: React.FC<EntryListProps> = ({
         ))
       )}
       {showMonthlyEntries && (
-        <div className="font-bold text-xl mt-4">Monatstotal Stunden: {calculateTotalHours()}</div>
+        <div className="font-bold text-xl mt-4">Monatstotal Stunden: {calculateTotalHours(Object.keys(entriesByDate).join(","))}</div>
       )}
       {showRemarksModal && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-    <div className="bg-white p-4 rounded-lg w-full max-w-lg relative">
-      <button
-        type="button"
-        onClick={closeRemarksModal}
-        className="absolute top-2 right-2 text-black text-xl"
-      >
-        <FontAwesomeIcon icon={faTimes} />
-      </button>
-      <h2 className="text-xl mb-4">Bemerkung bearbeiten</h2>
-      <RemarksForm
-        remarks={remarksByDate[currentRemarksDate!] || ''}
-        onRemarksChange={(e) => handleRemarksChange(e, currentRemarksDate!)}
-        saveRemarks={handleSaveRemarks}
-        onCancel={closeRemarksModal}
-        deleteRemarks={handleDeleteRemarks} // Pass deleteRemarks function
-      />
-    </div>
-  </div>
-)}
-
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white p-4 rounded-lg w-full max-w-lg relative">
+            <button
+              type="button"
+              onClick={closeRemarksModal}
+              className="absolute top-2 right-2 text-black text-xl"
+            >
+              <FontAwesomeIcon icon={faTimes} />
+            </button>
+            <h2 className="text-xl mb-4">Bemerkung bearbeiten</h2>
+            <RemarksForm
+              remarks={remarksByDate[currentRemarksDate!] || ''}
+              onRemarksChange={(e) => handleRemarksChange(e, currentRemarksDate!)}
+              saveRemarks={handleSaveRemarks}
+              onCancel={closeRemarksModal}
+              deleteRemarks={handleDeleteRemarks} // Pass deleteRemarks function
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
