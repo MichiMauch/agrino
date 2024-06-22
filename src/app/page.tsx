@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, useEffect, ChangeEvent, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import EntryForm from '../components/EntryForm';
 import EntryList from '../components/EntryList';
@@ -27,6 +27,14 @@ type EntryType = {
 };
 
 export default function FillHours() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <FillHoursContent />
+    </Suspense>
+  );
+}
+
+function FillHoursContent() {
   const searchParams = useSearchParams();
   const userId = parseInt(searchParams?.get('user') || '1');
   const user = getUserById(userId);
@@ -382,42 +390,31 @@ export default function FillHours() {
           </div>
         </div>
       )}
-{showDownloadModal && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-    <div className="bg-white p-4 rounded-lg w-full mx-4 max-w-screen-lg">
-      <div className="flex justify-end">
-        <button onClick={closeModal} className="text-black text-2xl">
-          <FontAwesomeIcon icon={faTimes} />
-        </button>
-      </div>
-      <h2 className="text-xl mb-4">Herunterladen oder versenden</h2>
-      {[0, 1, 2, 3].map(offset => {
-        const date = new Date();
-        date.setMonth(date.getMonth() - offset);
-        const month = format(date, 'MM');
-        const year = format(date, 'yyyy');
-        const monthName = format(date, 'MMMM', { locale: de });
-        return (
-          <div key={offset} className="mb-2 flex flex-col w-full"> {/* Reduced mb-4 to mb-2 */}
-            <div className="text-lg font-bold mb-1">{monthName}</div> {/* Reduced mb-2 to mb-1 */}
-            <ExportToExcel entriesByDate={entriesByDate} month={month} year={year} userId={userId} />
+      {showDownloadModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white p-4 rounded-lg w-full mx-4 max-w-screen-lg">
+            <div className="flex justify-end">
+              <button onClick={closeModal} className="text-black text-2xl">
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+            <h2 className="text-xl mb-4">Herunterladen oder versenden</h2>
+            {[0, 1, 2, 3].map(offset => {
+              const date = new Date();
+              date.setMonth(date.getMonth() - offset);
+              const month = format(date, 'MM');
+              const year = format(date, 'yyyy');
+              const monthName = format(date, 'MMMM', { locale: de });
+              return (
+                <div key={offset} className="mb-2 flex flex-col w-full"> {/* Reduced mb-4 to mb-2 */}
+                  <div className="text-lg font-bold mb-1">{monthName}</div> {/* Reduced mb-2 to mb-1 */}
+                  <ExportToExcel entriesByDate={entriesByDate} month={month} year={year} userId={userId} />
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
-    </div>
-  </div>
-)}
-
-
-
-
-
-
-
-
-
-
-
+        </div>
+      )}
       <div className="fixed bottom-0 left-0 w-full flex justify-around p-4 bg-customYellow-400">
         <button
           onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
