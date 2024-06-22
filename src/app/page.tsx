@@ -1,7 +1,6 @@
 "use client";
-
-import { useState, useEffect, ChangeEvent, ReactNode, Suspense } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useState, useEffect, ChangeEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
 import EntryForm from '../components/EntryForm';
 import EntryList from '../components/EntryList';
 import CalendarComponent from '../components/CalendarComponent';
@@ -11,8 +10,6 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import Image from 'next/image';
 import agrinoLogo from '/public/images/agrino_logo_web.png';
-
-const UserParamsProvider = dynamic(() => import('../components/UserParamsProvider'), { ssr: false });
 
 type HoursType = {
   [key: string]: number;
@@ -27,7 +24,9 @@ type EntryType = {
   user: number;
 };
 
-const FillHoursContent = ({ userId }: { userId: number }) => {
+export default function FillHours() {
+  const searchParams = useSearchParams();
+  const userId = parseInt(searchParams?.get('user') || '1');
   const user = getUserById(userId);
   const [date, setDate] = useState<string>('');
   const [hours, setHours] = useState<HoursType>({});
@@ -67,7 +66,6 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
           }, {});
           setEntriesByDate(entriesByDate);
           setRemarksByDate(remarksByDate);
-          console.log('Fetched entries:', entriesByDate);
         }
       } catch (error) {
         console.error('Error fetching entries:', error);
@@ -264,6 +262,34 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
     }
   };
 
+  const deleteRemarks = async (date: string) => {
+    try {
+      const response = await fetch('/api/hours', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ date, remarks: '' }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setRemarksByDate((prevRemarks) => ({
+          ...prevRemarks,
+          [date]: '',
+        }));
+        setConfirmationMessage('Bemerkung erfolgreich gelöscht!');
+        setTimeout(() => setConfirmationMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error deleting remarks:', error.message);
+    }
+  };
+
   const openModalForToday = () => {
     const today = new Date().toISOString().split('T')[0];
     setDate(today);
@@ -298,7 +324,7 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
   }, {});
 
   return (
-    <div className="container mx-auto px-4 pb-20">
+    <div className="container mx-auto px-4 pb-20"> {/* Add padding to the bottom */}
       <div className="flex justify-center mb-4">
         <Image src={agrinoLogo} alt="Agrino Logo" width={100} height={100} />
       </div>
@@ -314,6 +340,7 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
         entriesByDate={dailyHours}
         locale="de"
       />
+      
       <EntryList
         entriesByDate={showMonthlyEntries ? monthlyEntries : { [date]: filteredEntries }}
         handleEditEntry={handleEditEntry}
@@ -322,12 +349,14 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
         remarksByDate={remarksByDate}
         handleRemarksChange={handleRemarksChange}
         saveRemarks={saveRemarks}
+        handleAddEntry={handleAddEntry}
+        handleUpdateEntry={handleUpdateEntry}
+        deleteRemarks={deleteRemarks} // Pass deleteRemarks function
       />
       {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} month={date.split('-')[1]} year={date.split('-')[0]} />}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white p-4 rounded-lg w-full mx-2 max-w-screen-lg"> {/* Adjusted classes for width */}
-            <h2 className="text-xl mb-4">{editEntry ? 'Eintrag bearbeiten' : 'Neuen Eintrag hinzufügen'}</h2>
+          <div className="bg-white p-4 rounded-lg w-full max-w-lg">
             <EntryForm
               selectedCategory={selectedCategory}
               inputValue={inputValue}
@@ -340,14 +369,13 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
               onDateChange={setDate}
               remarks={remarks}
               onRemarksChange={(e) => handleRemarksChange(e, date)}
-              onCancel={() => setShowModal(false)}  // Neue Eigenschaft für Abbrechen
+              onCancel={() => setShowModal(false)}
             />
           </div>
         </div>
       )}
-
       {showDownloadModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white p-4 rounded-lg">
             <h2 className="text-xl mb-4">Monatsberichte herunterladen</h2>
             {[0, 1, 2, 3].map(offset => {
@@ -368,44 +396,26 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
           </div>
         </div>
       )}
-      <div className="fixed bottom-0 left-0 w-full flex justify-around p-4 bg-[#C8D300]">
+      <div className="fixed bottom-0 left-0 w-full flex justify-around p-4 bg-customYellow-400">
         <button
           onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
-          className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
+          className="flex-1 bg-customYellow-400 text-black py-2 px-4 rounded mx-2 h-12"
         >
-          {showMonthlyEntries ? <i className="fas fa-list-ol text-4xl"></i> : <i className="fas fa-calendar-alt text-4xl"></i>}
+          {showMonthlyEntries ? <i className="fas fa-list-ol text-4xl text-white"></i> : <i className="fas fa-calendar-alt text-4xl text-white"></i>}
         </button>
         <button
           onClick={openModalForToday}
-          className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
+          className="flex-1 bg-customYellow-400 text-black py-2 px-4 rounded mx-2 h-12"
         >
-          <i className="fas fa-plus text-4xl"></i>
+          <i className="fas fa-plus text-4xl text-white"></i>
         </button>
         <button
           onClick={() => downloadMonth(0)}
-          className="flex-1 bg-[#C8D300] text-white py-2 px-4 rounded mx-2 h-12"
+          className="flex-1 bg-customYellow-400 text-black py-2 px-4 rounded mx-2 h-12"
         >
-          <i className="fas fa-file-download text-4xl"></i>
+          <i className="fas fa-file-download text-white text-4xl"></i>
         </button>
       </div>
     </div>
   );
-};
-
-const Page = () => {
-  const [userId, setUserId] = useState<number | null>(null);
-
-  const handleUserIdResolved = (resolvedUserId: number) => {
-    setUserId(resolvedUserId);
-  };
-
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <UserParamsProvider onUserIdResolved={handleUserIdResolved}>
-        {(resolvedUserId: number) => userId !== null && <FillHoursContent userId={resolvedUserId} />}
-      </UserParamsProvider>
-    </Suspense>
-  );
-};
-
-export default Page;
+}

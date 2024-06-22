@@ -1,7 +1,10 @@
 "use client";
 import React, { useState, ChangeEvent } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faTrash, faTimes } from '@fortawesome/free-solid-svg-icons';
+
+import EntryForm from './EntryForm';
+import RemarksForm from './RemarksForm';
 
 type EntryType = {
   _id?: string;
@@ -20,6 +23,9 @@ type EntryListProps = {
   remarksByDate: { [key: string]: string };
   handleRemarksChange: (e: ChangeEvent<HTMLTextAreaElement>, date: string) => void;
   saveRemarks: (date: string) => void;
+  handleAddEntry: () => void;
+  handleUpdateEntry: () => void;
+  deleteRemarks: (date: string) => void; // New prop for deleting remarks
 };
 
 const EntryList: React.FC<EntryListProps> = ({
@@ -29,7 +35,10 @@ const EntryList: React.FC<EntryListProps> = ({
   showMonthlyEntries,
   remarksByDate,
   handleRemarksChange,
-  saveRemarks
+  saveRemarks,
+  handleAddEntry,
+  handleUpdateEntry,
+  deleteRemarks // New prop for deleting remarks
 }) => {
   const [showRemarksModal, setShowRemarksModal] = useState(false);
   const [currentRemarksDate, setCurrentRemarksDate] = useState<string | null>(null);
@@ -64,6 +73,13 @@ const EntryList: React.FC<EntryListProps> = ({
   const handleSaveRemarks = () => {
     if (currentRemarksDate) {
       saveRemarks(currentRemarksDate);
+      closeRemarksModal();
+    }
+  };
+
+  const handleDeleteRemarks = () => {
+    if (currentRemarksDate) {
+      deleteRemarks(currentRemarksDate);
       closeRemarksModal();
     }
   };
@@ -110,15 +126,23 @@ const EntryList: React.FC<EntryListProps> = ({
                 </li>
               ))}
             </ul>
-            <div className="mx-[-16px] bg-white p-2">
+            <div className="mx-[-16px] bg-white p-2 relative pb-8"> {/* Added pb-8 to add padding at the bottom */}
+              <div className="absolute top-2 right-2">
+                <FontAwesomeIcon
+                  icon={faEdit}
+                  className="text-black text-2xl cursor-pointer"
+                  onClick={() => openRemarksModal(date)}
+                />
+              </div>
               <strong>Bemerkung:</strong>
-              <p>{remarksByDate[date] || 'Keine Bemerkung'}</p>
-              <button
-                onClick={() => openRemarksModal(date)}
-                className="bg-customYellow-200 text-black py-1 px-3 rounded mt-2"
-              >
-                <FontAwesomeIcon icon={faEdit} className="text-2xl" />
-              </button>
+              <p className="mr-8">{remarksByDate[date] || 'Keine Bemerkung'}</p>
+              <div className="absolute bottom-2 left-2">
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  className="text-black text-sm cursor-pointer"
+                  onClick={() => deleteRemarks(date)}
+                />
+              </div>
             </div>
           </div>
         ))
@@ -127,33 +151,27 @@ const EntryList: React.FC<EntryListProps> = ({
         <div className="font-bold text-xl mt-4">Monatstotal Stunden: {calculateTotalHours()}</div>
       )}
       {showRemarksModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white p-4 rounded-lg w-full max-w-lg">
-            <h2 className="text-xl mb-4">Bemerkung bearbeiten</h2>
-            <textarea
-              value={remarksByDate[currentRemarksDate!] || ''}
-              onChange={(e) => handleRemarksChange(e, currentRemarksDate!)}
-              rows={3}
-              className="mt-1 block w-full border border-gray-300"
-              placeholder="Bemerkungen"
-            />
-            <div className="flex justify-end mt-2 space-x-2">
-              <button
-                onClick={closeRemarksModal}
-                className="bg-red-500 text-white py-1 px-3 rounded"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={handleSaveRemarks}
-                className="bg-customYellow-200 text-black py-1 px-3 rounded"
-              >
-                <FontAwesomeIcon icon={faSave} className="text-2xl" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+    <div className="bg-white p-4 rounded-lg w-full max-w-lg relative">
+      <button
+        type="button"
+        onClick={closeRemarksModal}
+        className="absolute top-2 right-2 text-black text-xl"
+      >
+        <FontAwesomeIcon icon={faTimes} />
+      </button>
+      <h2 className="text-xl mb-4">Bemerkung bearbeiten</h2>
+      <RemarksForm
+        remarks={remarksByDate[currentRemarksDate!] || ''}
+        onRemarksChange={(e) => handleRemarksChange(e, currentRemarksDate!)}
+        saveRemarks={handleSaveRemarks}
+        onCancel={closeRemarksModal}
+        deleteRemarks={handleDeleteRemarks} // Pass deleteRemarks function
+      />
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
