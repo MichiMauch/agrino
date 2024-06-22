@@ -113,10 +113,13 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
             subject: `Monatsrapport ${monthName} ${year}`,
             text: `Hier ist der Monatsrapport für ${monthName} ${year}.`,
             attachment: base64data,
+            month,
+            year,
           }),
         });
+        const result = await response.json();
         if (response.ok) {
-          setSendTime(new Date().toLocaleString());
+          setSendTime(result.sendTime);
         } else {
           alert('Fehler beim Senden der E-Mail');
         }

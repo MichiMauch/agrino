@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import mandrill from 'mandrill-api/mandrill';
 import { getUserById } from '../../lib/users';
+import connectToDatabase from '../../lib/mongodb';
+import EmailStatus from '../../models/EmailStatus';
 
 const mandrillClient = new mandrill.Mandrill(process.env.MANDRILL_API_KEY);
 
@@ -13,21 +15,18 @@ type MandrillSendResult = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
-    const { subject, text, attachment } = req.body;
-    const { userId } = req.query;
+    const { subject, text, attachment, month, year } = req.body;
+    const userId = parseInt(req.query.userId as string, 10);
 
-    console.log('User ID:', userId); // Log the user ID
-
-    const user = getUserById(Number(userId));
-    if (!user) {
+    if (isNaN(userId)) {
       return res.status(400).json({ error: 'Invalid user ID' });
     }
 
-    const fromEmail = user.email;
+    const user = getUserById(userId);
+    const fromEmail = user ? user.email : undefined;
     const recipientEmail = process.env.EMAIL_RECIPIENT;
 
-    console.log('Recipient Email:', recipientEmail); // Log the recipient email
-    console.log('From Email:', fromEmail); // Log the sender email
+    console.log('Recipient Email:', recipientEmail);
 
     if (!recipientEmail) {
       return res.status(500).json({ error: 'Recipient email not set in environment variables' });
@@ -64,7 +63,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('Mandrill send result:', result);
 
       if (result[0].status === 'sent' || result[0].status === 'queued') {
-        return res.status(200).json({ message: 'Email sent successfully' });
+        const db = await connectToDatabase();
+        const sendTime = new Date();
+
+        console.log('Database connection established.');
+
+        try {
+          await EmailStatus.create({
+            userId,
+            month,
+            year,
+            sendTime,
+          });
+
+          console.log('Email status saved to database.');
+
+          return res.status(200).json({ message: 'Email sent and status saved', sendTime });
+        } catch (err) {
+          console.error('Error saving email status to database:', err);
+          return res.status(500).json({ error: 'Error saving email status to database' });
+        }
       } else {
         return res.status(500).json({ error: `Mandrill did not send the email: ${result[0].reject_reason || 'No reject reason provided'}` });
       }
