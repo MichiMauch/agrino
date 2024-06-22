@@ -326,7 +326,7 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
       {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} month={date.split('-')[1]} year={date.split('-')[0]} />}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-          <div className="bg-white p-4 rounded-lg">
+          <div className="bg-white p-4 rounded-lg w-full mx-2 max-w-screen-lg"> {/* Adjusted classes for width */}
             <h2 className="text-xl mb-4">{editEntry ? 'Eintrag bearbeiten' : 'Neuen Eintrag hinzufügen'}</h2>
             <EntryForm
               selectedCategory={selectedCategory}
@@ -340,16 +340,12 @@ const FillHoursContent = ({ userId }: { userId: number }) => {
               onDateChange={setDate}
               remarks={remarks}
               onRemarksChange={(e) => handleRemarksChange(e, date)}
+              onCancel={() => setShowModal(false)}  // Neue Eigenschaft für Abbrechen
             />
-            <button
-              onClick={() => setShowModal(false)}
-              className="bg-red-500 text-white py-2 px-4 rounded mt-4"
-            >
-              Abbrechen
-            </button>
           </div>
         </div>
       )}
+
       {showDownloadModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded-lg">

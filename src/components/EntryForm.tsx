@@ -1,6 +1,8 @@
 "use client";
 import { ChangeEvent } from 'react';
 import { categories } from './CategorySelect';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 type EntryFormProps = {
   date: string;
@@ -14,6 +16,7 @@ type EntryFormProps = {
   handleAddEntry: () => void;
   handleUpdateEntry: () => void;
   editEntry: boolean;
+  onCancel: () => void;
 };
 
 export default function EntryForm({
@@ -27,7 +30,8 @@ export default function EntryForm({
   onRemarksChange,
   handleAddEntry,
   handleUpdateEntry,
-  editEntry
+  editEntry,
+  onCancel,
 }: EntryFormProps) {
   return (
     <form
@@ -46,7 +50,7 @@ export default function EntryForm({
         <select
           value={selectedCategory}
           onChange={(e) => onCategoryChange(e.target.value)}
-          className="mt-1 block w-full"
+          className="mt-1 block w-full border text-lg" // Added text-lg class
         >
           <option value="" disabled>
             Wähle eine Kategorie
@@ -60,32 +64,35 @@ export default function EntryForm({
       </div>
       {selectedCategory && !['ferien', 'unfall', 'schule', 'dienst'].includes(selectedCategory) && (
         <div>
-          
+          <label className="block text-xl font-medium">Stunden</label>
           <input
             type="number"
             value={inputValue}
             onChange={onInputChange}
-            className="mt-1 block w-full"
+            className="mt-1 block w-full border text-lg" // Added text-lg class
             placeholder="Anzahl Stunden"
           />
-          
-          {editEntry ? (
-            <button
-              type="submit"
-              className="bg-yellow-500 text-white py-1 px-3 rounded mt-2"
-            >
-              Eintrag aktualisieren
-            </button>
-          ) : (
-            <button
-              type="submit"
-              className="bg-green-500 text-white py-1 px-3 rounded mt-2"
-            >
-              Eintrag hinzufügen
-            </button>
-          )}
         </div>
       )}
+      <div className="flex mt-4 space-x-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="bg-customYellow-200 text-black py-2 px-4 rounded flex-grow"
+          title="Abbrechen"
+          style={{ flexBasis: '30%' }}
+        >
+          <FontAwesomeIcon icon={faTimes} size="lg" />
+        </button>
+        <button
+          type="submit"
+          className="bg-customYellow-200 text-black py-2 px-4 rounded flex-grow"
+          title={editEntry ? "Aktualisieren" : "Eintrag hinzufügen"}
+          style={{ flexBasis: '70%' }}
+        >
+          <FontAwesomeIcon icon={faSave} size="lg" />
+        </button>
+      </div>
     </form>
   );
 }
