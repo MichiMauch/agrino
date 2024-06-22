@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { categories } from './CategorySelect';
@@ -30,6 +30,23 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
   const monthDate = new Date(parseInt(year), parseInt(month) - 1);
   const monthName = format(monthDate, 'MMMM', { locale: de });
 
+  useEffect(() => {
+    // Fetch the last send time from the database when the component mounts
+    const fetchSendTime = async () => {
+      try {
+        const response = await fetch(`/api/getEmail?userId=${userId}&month=${month}&year=${year}`);
+        const data = await response.json();
+        if (response.ok) {
+          setSendTime(data.sendTime);
+        }
+      } catch (error) {
+        console.error('Error fetching send time:', error);
+      }
+    };
+
+    fetchSendTime();
+  }, [userId, month, year]);
+
   const createExcelFile = () => {
     const wb = XLSX.utils.book_new();
     const wsData: any[][] = [];
@@ -37,7 +54,6 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
     const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
 
     wsData.push([`Agrino Monatsrapport ${monthName} ${year}`]);
-
     wsData.push([]);
 
     const header = ['Datum', ...categories.map(cat => cat.label), 'Tagesgesamt', 'Bemerkungen'];
@@ -145,7 +161,7 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
           )}
         </button>
       </div>
-      {sendTime && <div className="text-sm text-gray-600 mt-2">Gesendet: {sendTime}</div>}
+      {sendTime && <div className="text-sm text-gray-600 mt-2">Gesendet: {new Date(sendTime).toLocaleString()}</div>}
     </div>
   );
 };
