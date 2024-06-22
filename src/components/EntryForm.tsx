@@ -36,13 +36,7 @@ export default function EntryForm({
   return (
     <div className="relative">
       <h2 className="text-xl mb-4">Eintrag bearbeiten</h2>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="absolute top-0 right-0 text-black text-xl mt-2 mr-2"
-      >
-        <FontAwesomeIcon icon={faTimes} />
-      </button>
+      
       <form
         onSubmit={(e) => {
           e.preventDefault();

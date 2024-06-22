@@ -5,7 +5,8 @@ import { categories } from './CategorySelect';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import { faDownload, faPaperPlane, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { getUserById } from '../lib/users'; // Assuming the getUserById function is in the lib/users file
 
 type EntryType = {
   _id?: string;
@@ -27,6 +28,9 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
   const [isSending, setIsSending] = useState(false);
   const [sendTime, setSendTime] = useState<string | null>(null);
 
+  const user = getUserById(userId);
+  const userName = user ? user.name : 'Unknown User';
+
   const monthDate = new Date(parseInt(year), parseInt(month) - 1);
   const monthName = format(monthDate, 'MMMM', { locale: de });
 
@@ -35,9 +39,13 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
     const fetchSendTime = async () => {
       try {
         const response = await fetch(`/api/getEmail?userId=${userId}&month=${month}&year=${year}`);
-        const data = await response.json();
         if (response.ok) {
+          const data = await response.json();
           setSendTime(data.sendTime);
+        } else if (response.status === 404) {
+          setSendTime(null);
+        } else {
+          console.error('Error fetching send time:', response.statusText);
         }
       } catch (error) {
         console.error('Error fetching send time:', error);
@@ -53,6 +61,7 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
 
     const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
 
+    wsData.push([userName]); // Add user's name as the first row
     wsData.push([`Agrino Monatsrapport ${monthName} ${year}`]);
     wsData.push([]);
 
@@ -147,23 +156,31 @@ const ExportToExcel: React.FC<ExportToExcelProps> = ({ entriesByDate, month, yea
   };
 
   return (
-    <div className="flex space-x-4 w-full items-center">
-      <div className="flex w-full space-x-4">
-        <button onClick={handleExport} className="bg-customYellow-200 text-black py-2 px-4 rounded flex items-center justify-center w-1/4">
+    <div className="flex flex-col items-center space-y-1 w-full">
+      <div className="flex space-x-4 w-full items-center">
+        <button onClick={handleExport} className="bg-customYellow-200 text-black py-2 px-4 rounded flex items-center justify-center w-1/4 h-12">
           <FontAwesomeIcon icon={faDownload} className="mr-2" />
         </button>
-        <button onClick={handleSendEmail} className="bg-customYellow-200 text-black py-2 px-4 rounded flex items-center justify-center w-3/4" disabled={isSending}>
-          {isSending ? 'Senden...' : (
-            <>
-              <FontAwesomeIcon icon={faPaperPlane} className="mr-2" />
-              senden
-            </>
+        <div className="flex flex-col w-3/4 items-center relative">
+          {sendTime && (
+            <div className="text-xs absolute top-0 -mt-5 text-center">
+              {new Date(sendTime).toLocaleString()}
+            </div>
           )}
-        </button>
+          <button onClick={handleSendEmail} className={`bg-customYellow-200 text-black py-2 px-4 rounded flex items-center justify-center w-full h-12 ${sendTime ? 'bg-green-500' : ''}`}>
+            {isSending ? 'Senden...' : (
+              <div className="flex items-center">
+                <FontAwesomeIcon icon={faPaperPlane} className="mr-2" />
+                {sendTime ? 'Gesendet' : 'Senden'}
+              </div>
+            )}
+          </button>
+        </div>
       </div>
-      {sendTime && <div className="text-sm text-gray-600 mt-2">Gesendet: {new Date(sendTime).toLocaleString()}</div>}
     </div>
   );
+  
+  
 };
 
 export default ExportToExcel;

@@ -384,8 +384,13 @@ export default function FillHours() {
       )}
 {showDownloadModal && (
   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-    <div className="bg-white p-4 rounded-lg">
-      <h2 className="text-xl mb-4">Monatsberichte herunterladen oder versenden</h2>
+    <div className="bg-white p-4 rounded-lg w-full mx-4 max-w-screen-lg">
+      <div className="flex justify-end">
+        <button onClick={closeModal} className="text-black text-2xl">
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+      </div>
+      <h2 className="text-xl mb-4">Herunterladen oder versenden</h2>
       {[0, 1, 2, 3].map(offset => {
         const date = new Date();
         date.setMonth(date.getMonth() - offset);
@@ -393,23 +398,20 @@ export default function FillHours() {
         const year = format(date, 'yyyy');
         const monthName = format(date, 'MMMM', { locale: de });
         return (
-          <div key={offset} className="mb-4 flex items-center justify-between">
-            <div className="w-1/4 text-lg">{monthName}:</div>
-            <div className="w-3/4">
-              <ExportToExcel entriesByDate={entriesByDate} month={month} year={year} userId={userId} />
-            </div>
+          <div key={offset} className="mb-2 flex flex-col w-full"> {/* Reduced mb-4 to mb-2 */}
+            <div className="text-lg font-bold mb-1">{monthName}</div> {/* Reduced mb-2 to mb-1 */}
+            <ExportToExcel entriesByDate={entriesByDate} month={month} year={year} userId={userId} />
           </div>
         );
       })}
-      <button
-        onClick={closeModal}
-        className="bg-red-500 text-white py-2 px-4 rounded mt-4"
-      >
-        Abbrechen
-      </button>
     </div>
   </div>
 )}
+
+
+
+
+
 
 
 

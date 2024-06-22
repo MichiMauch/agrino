@@ -3,6 +3,8 @@ import mandrill from 'mandrill-api/mandrill';
 import { getUserById } from '../../lib/users';
 import connectToDatabase from '../../lib/mongodb';
 import EmailStatus from '../../models/EmailStatus';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 const mandrillClient = new mandrill.Mandrill(process.env.MANDRILL_API_KEY);
 
@@ -15,7 +17,7 @@ type MandrillSendResult = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
-    const { subject, text, attachment, month, year } = req.body;
+    const { subject, attachment, month, year } = req.body;
     const userId = parseInt(req.query.userId as string, 10);
 
     if (isNaN(userId)) {
@@ -32,9 +34,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Recipient email not set in environment variables' });
     }
 
+    const userName = user ? user.name : 'Unknown User';
+    const emailSubject = `${userName} - ${subject}`;
+
+    // Format the month name
+    const monthDate = new Date(parseInt(year), parseInt(month) - 1);
+    const monthName = format(monthDate, 'MMMM', { locale: de });
+
+    const emailBody = `
+      <p>Guten Tag</p>
+      <p>Hier ist mein Rapport von ${monthName} ${year}.</p>
+      <p>Herzliche Grüsse<br>${userName}</p>
+    `;
+
     const message = {
-      html: `<p>${text}</p>`,
-      subject,
+      html: emailBody,
+      subject: emailSubject,
       from_email: fromEmail,
       to: [
         {
