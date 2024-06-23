@@ -20,6 +20,7 @@ export const categories = [
   { value: 'dienst', label: 'Dienst' },
 ];
 
+
 type CategorySelectProps = {
   selectedCategory: string;
   onSelectCategory: (category: string) => void;

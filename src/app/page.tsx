@@ -11,7 +11,7 @@ import { de } from 'date-fns/locale';
 import Image from 'next/image';
 import agrinoLogo from '/public/images/agrino_logo_web.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faFileDownload, faPlus, faListOl, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 
 type HoursType = {
   [key: string]: number;
@@ -24,6 +24,9 @@ type EntryType = {
   hours: number;
   remarks?: string;
   user: number;
+  morningMeal?: boolean;
+  lunchMeal?: boolean;
+  eveningMeal?: boolean;
 };
 
 export default function FillHours() {
@@ -300,6 +303,19 @@ function FillHoursContent() {
     }
   };
 
+  const handleMealChange = (date: string, meal: string, value: boolean) => {
+    setEntriesByDate((prevEntries) => {
+      const dateEntries = prevEntries[date]?.map((entry) => ({
+        ...entry,
+        [meal]: value,
+      }));
+      return {
+        ...prevEntries,
+        [date]: dateEntries,
+      };
+    });
+  };
+
   const openModalForToday = () => {
     const today = new Date().toISOString().split('T')[0];
     setDate(today);
@@ -329,7 +345,9 @@ function FillHoursContent() {
   }, {});
 
   const dailyHours = Object.keys(entriesByDate).reduce((acc: { [key: string]: number }, key) => {
-    acc[key] = entriesByDate[key].reduce((total, entry) => total + entry.hours, 0);
+    if (entriesByDate[key]) {
+      acc[key] = entriesByDate[key].reduce((total, entry) => total + entry.hours, 0);
+    }
     return acc;
   }, {});
 
@@ -361,8 +379,8 @@ function FillHoursContent() {
         handleAddEntry={handleAddEntry}
         handleUpdateEntry={handleUpdateEntry}
         deleteRemarks={deleteRemarks}
+        handleMealChange={handleMealChange}
       />
-      {showMonthlyEntries && <ExportToExcel entriesByDate={monthlyEntries} month={date.split('-')[1]} year={date.split('-')[0]} userId={0} />}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
           <div className="bg-white p-4 rounded-lg w-full max-w-lg relative">
@@ -420,21 +438,22 @@ function FillHoursContent() {
           onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
           className="flex-1 bg-customYellow-400 text-black py-2 px-4 rounded mx-2 h-12"
         >
-          {showMonthlyEntries ? <i className="fas fa-list-ol text-4xl text-white"></i> : <i className="fas fa-calendar-alt text-4xl text-white"></i>}
+      {showMonthlyEntries ? <FontAwesomeIcon icon={faListOl} size="3x" className="text-white" /> : <FontAwesomeIcon icon={faCalendarAlt} size="3x" className="text-white" />}
         </button>
         <button
           onClick={openModalForToday}
           className="flex-1 bg-customYellow-400 text-black py-2 px-4 rounded mx-2 h-12"
         >
-          <i className="fas fa-plus text-4xl text-white"></i>
+          <FontAwesomeIcon icon={faPlus} size="3x" className="text-white" />
         </button>
         <button
           onClick={() => downloadMonth(0)}
           className="flex-1 bg-customYellow-400 text-black py-2 px-4 rounded mx-2 h-12"
         >
-          <i className="fas fa-file-download text-white text-4xl"></i>
+          <FontAwesomeIcon icon={faFileDownload} size="3x" className="text-white" />
         </button>
       </div>
+
     </div>
   );
 }

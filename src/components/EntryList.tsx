@@ -13,6 +13,9 @@ type EntryType = {
   hours: number;
   remarks?: string;
   user: number;
+  morningMeal?: boolean;
+  lunchMeal?: boolean;
+  eveningMeal?: boolean;
 };
 
 type EntryListProps = {
@@ -26,6 +29,7 @@ type EntryListProps = {
   handleAddEntry: () => void;
   handleUpdateEntry: () => void;
   deleteRemarks: (date: string) => void;
+  handleMealChange: (date: string, meal: string, value: boolean) => void;
 };
 
 const EntryList: React.FC<EntryListProps> = ({
@@ -39,6 +43,7 @@ const EntryList: React.FC<EntryListProps> = ({
   handleAddEntry,
   handleUpdateEntry,
   deleteRemarks,
+  handleMealChange,
 }) => {
   const [showRemarksModal, setShowRemarksModal] = useState(false);
   const [currentRemarksDate, setCurrentRemarksDate] = useState<string | null>(null);
@@ -57,6 +62,10 @@ const EntryList: React.FC<EntryListProps> = ({
 
   const calculateTotalHours = (date: string) => {
     return entriesByDate[date]?.reduce((sum, entry) => sum + entry.hours, 0) || 0;
+  };
+
+  const calculateMonthlyTotalHours = (entriesByDate: { [key: string]: EntryType[] }) => {
+    return Object.values(entriesByDate).flat().reduce((sum, entry) => sum + entry.hours, 0);
   };
 
   const openRemarksModal = (date: string) => {
@@ -81,6 +90,11 @@ const EntryList: React.FC<EntryListProps> = ({
       deleteRemarks(currentRemarksDate);
       closeRemarksModal();
     }
+  };
+
+  const handleMealCheckboxChange = (date: string, meal: string) => {
+    const currentValue = entriesByDate[date]?.[0]?.[meal] || false;
+    handleMealChange(date, meal, !currentValue);
   };
 
   return (
@@ -135,6 +149,32 @@ const EntryList: React.FC<EntryListProps> = ({
                   onClick={() => openRemarksModal(date)}
                 />
               </div>
+              <div className="border p-2 mb-2"> {/* Box for meal checkboxes */}
+                <label className="mr-4">
+                  <input
+                    type="checkbox"
+                    checked={entriesByDate[date]?.[0]?.morningMeal || false}
+                    onChange={() => handleMealCheckboxChange(date, 'morningMeal')}
+                  />
+                  Morgenessen
+                </label>
+                <label className="mr-4">
+                  <input
+                    type="checkbox"
+                    checked={entriesByDate[date]?.[0]?.lunchMeal || false}
+                    onChange={() => handleMealCheckboxChange(date, 'lunchMeal')}
+                  />
+                  Mittagessen
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={entriesByDate[date]?.[0]?.eveningMeal || false}
+                    onChange={() => handleMealCheckboxChange(date, 'eveningMeal')}
+                  />
+                  Abendessen
+                </label>
+              </div>
               <strong>Bemerkung:</strong>
               <p className="mr-8">{remarksByDate[date] || 'Keine Bemerkung'}</p>
               <div className="absolute bottom-2 left-2">
@@ -149,7 +189,7 @@ const EntryList: React.FC<EntryListProps> = ({
         ))
       )}
       {showMonthlyEntries && (
-        <div className="font-bold text-xl mt-4">Monatstotal Stunden: {calculateTotalHours(Object.keys(entriesByDate).join(","))}</div>
+        <div className="font-bold text-xl mt-4">Monatstotal Stunden: {calculateMonthlyTotalHours(entriesByDate)}</div>
       )}
       {showRemarksModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
