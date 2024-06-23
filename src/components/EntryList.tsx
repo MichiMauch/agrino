@@ -2,9 +2,9 @@
 import React, { useState, ChangeEvent } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash, faTimes } from '@fortawesome/free-solid-svg-icons';
-
 import EntryForm from './EntryForm';
 import RemarksForm from './RemarksForm';
+import { categories } from './CategorySelect';
 
 type EntryType = {
   _id?: string;
@@ -25,7 +25,7 @@ type EntryListProps = {
   saveRemarks: (date: string) => void;
   handleAddEntry: () => void;
   handleUpdateEntry: () => void;
-  deleteRemarks: (date: string) => void; // New prop for deleting remarks
+  deleteRemarks: (date: string) => void;
 };
 
 const EntryList: React.FC<EntryListProps> = ({
@@ -38,7 +38,7 @@ const EntryList: React.FC<EntryListProps> = ({
   saveRemarks,
   handleAddEntry,
   handleUpdateEntry,
-  deleteRemarks // New prop for deleting remarks
+  deleteRemarks,
 }) => {
   const [showRemarksModal, setShowRemarksModal] = useState(false);
   const [currentRemarksDate, setCurrentRemarksDate] = useState<string | null>(null);
@@ -46,6 +46,11 @@ const EntryList: React.FC<EntryListProps> = ({
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
     return new Date(dateString).toLocaleDateString('de-DE', options);
+  };
+
+  const getCategoryLabel = (value: string) => {
+    const category = categories.find(cat => cat.value === value);
+    return category ? category.label : value;
   };
 
   const sortedDates = Object.keys(entriesByDate).sort();
@@ -103,7 +108,7 @@ const EntryList: React.FC<EntryListProps> = ({
                   </div>
                   <div>
                     <div>
-                      <strong>Kategorie:</strong> {entry.category}
+                      <strong>Kategorie:</strong> {getCategoryLabel(entry.category)}
                     </div>
                     <div>
                       <strong>Stunden:</strong> {entry.hours}
