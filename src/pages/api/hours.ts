@@ -27,18 +27,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             break;
         case 'PUT':
             try {
-                const { id, hours, remarks, date } = req.body;
+                const { id, hours, remarks, date, meal, value } = req.body;
                 if (id) {
-                    const updatedHour = await Hour.findByIdAndUpdate(id, { hours, remarks }, { new: true });
+                    const update = { hours, remarks };
+                    if (meal) update[meal] = value;
+                    const updatedHour = await Hour.findByIdAndUpdate(id, update, { new: true });
                     res.status(200).json({ success: true, data: updatedHour });
                 } else if (date && remarks !== undefined) {
                     const result = await Hour.updateMany({ date }, { remarks });
+                    res.status(200).json({ success: true, data: result });
+                } else if (date && meal !== undefined) {
+                    const update = { [meal]: value };
+                    const result = await Hour.updateMany({ date }, update);
                     res.status(200).json({ success: true, data: result });
                 } else {
                     throw new Error('Invalid request');
                 }
             } catch (error) {
-                res.status(400).json({ success: false, error });
+                res.status(400).json({ success: false, error: error.message });
             }
             break;
         case 'DELETE':

@@ -147,6 +147,9 @@ function FillHoursContent() {
       hours: parseFloat(inputValue),
       remarks,
       user: userId,
+      morningMeal: false,
+      lunchMeal: false,
+      eveningMeal: false,
     };
 
     try {
@@ -303,17 +306,42 @@ function FillHoursContent() {
     }
   };
 
-  const handleMealChange = (date: string, meal: string, value: boolean) => {
-    setEntriesByDate((prevEntries) => {
-      const dateEntries = prevEntries[date]?.map((entry) => ({
-        ...entry,
-        [meal]: value,
-      }));
-      return {
-        ...prevEntries,
-        [date]: dateEntries,
-      };
-    });
+  const handleMealChange = async (date: string, meal: string, value: boolean) => {
+    try {
+      const entryToUpdate = entriesByDate[date]?.[0];
+      if (entryToUpdate) {
+        const updatedEntry = { ...entryToUpdate, [meal]: value };
+
+        const response = await fetch(`/api/hours`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id: updatedEntry._id, ...updatedEntry }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setEntriesByDate((prevEntriesByDate) => {
+            const dateEntries = prevEntriesByDate[date].map((entry) =>
+              entry._id === updatedEntry._id ? updatedEntry : entry
+            );
+            return {
+              ...prevEntriesByDate,
+              [date]: dateEntries,
+            };
+          });
+          setConfirmationMessage('Eintrag erfolgreich aktualisiert!');
+          setTimeout(() => setConfirmationMessage(''), 3000);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating meal entry:', error.message);
+    }
   };
 
   const openModalForToday = () => {
@@ -345,9 +373,7 @@ function FillHoursContent() {
   }, {});
 
   const dailyHours = Object.keys(entriesByDate).reduce((acc: { [key: string]: number }, key) => {
-    if (entriesByDate[key]) {
-      acc[key] = entriesByDate[key].reduce((total, entry) => total + entry.hours, 0);
-    }
+    acc[key] = entriesByDate[key].reduce((total, entry) => total + entry.hours, 0);
     return acc;
   }, {});
 
@@ -438,7 +464,7 @@ function FillHoursContent() {
           onClick={() => setShowMonthlyEntries(!showMonthlyEntries)}
           className="flex-1 bg-customYellow-400 text-black py-2 px-4 rounded mx-2 h-12"
         >
-      {showMonthlyEntries ? <FontAwesomeIcon icon={faListOl} size="3x" className="text-white" /> : <FontAwesomeIcon icon={faCalendarAlt} size="3x" className="text-white" />}
+          {showMonthlyEntries ? <FontAwesomeIcon icon={faListOl} size="3x" className="text-white" /> : <FontAwesomeIcon icon={faCalendarAlt} size="3x" className="text-white" />}
         </button>
         <button
           onClick={openModalForToday}

@@ -21,6 +21,18 @@ const HourSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  morningMeal: {
+    type: Boolean,
+    default: false
+  },
+  lunchMeal: {
+      type: Boolean,
+      default: false
+  },
+  eveningMeal: {
+      type: Boolean,
+      default: false
+  }
 });
 
 export default mongoose.models.Hour || mongoose.model('Hour', HourSchema);

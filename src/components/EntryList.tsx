@@ -92,10 +92,35 @@ const EntryList: React.FC<EntryListProps> = ({
     }
   };
 
-  const handleMealCheckboxChange = (date: string, meal: string) => {
+  const handleMealCheckboxChange = async (date: string, meal: string) => {
     const currentValue = entriesByDate[date]?.[0]?.[meal] || false;
-    handleMealChange(date, meal, !currentValue);
+    const newValue = !currentValue;
+  
+    handleMealChange(date, meal, newValue);
+  
+    try {
+      const response = await fetch('/api/hours', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ date, meal, value: newValue }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error('Error updating meal status');
+      }
+    } catch (error) {
+      console.error('Error saving meal status:', error.message);
+    }
   };
+  
+  
 
   return (
     <div>
@@ -141,39 +166,49 @@ const EntryList: React.FC<EntryListProps> = ({
                 </li>
               ))}
             </ul>
-            <div className="mx-[-16px] bg-white p-2 relative pb-8"> {/* Added pb-8 to add padding at the bottom */}
+            
+            {/* Neue Box für die Toggle-Schalter */}
+            <div className="mx-[-16px] bg-white p-2 mt-4 relative pb-8">
+              <div className="border p-2 mb-2"> {/* Box for meal checkboxes */}
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    defaultChecked={entriesByDate[date]?.[0]?.morningMeal || false}
+                    onChange={() => handleMealCheckboxChange(date, 'morningMeal')}
+                  />
+                  <div className="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 dark:bg-gray-700 peer-checked:bg-red-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Morgenessen</span>
+                </label>
+                <label className="inline-flex items-center me-5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    defaultChecked={entriesByDate[date]?.[0]?.lunchMeal || false}
+                    onChange={() => handleMealCheckboxChange(date, 'lunchMeal')}
+                  />
+                  <div className="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 dark:bg-gray-700 peer-checked:bg-red-600 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Mittagessen</span>
+                </label>
+                <label className="inline-flex items-center me-5 cursor-pointer">
+                  <input 
+                    type="checkbox"
+                    className="sr-only peer"
+                    defaultChecked={entriesByDate[date]?.[0]?.eveningMeal || false}
+                    onChange={() => handleMealCheckboxChange(date, 'eveningMeal')}
+                  />
+                  <div className="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-red-300 dark:peer-focus:ring-red-800 dark:bg-gray-700 peer-checked:bg-red-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Abendessen</span>
+                </label>
+              </div>
+            </div>
+            <div className="mx-[-16px] bg-white p-2 relative pb-8"> {/* Box for remarks */}
               <div className="absolute top-2 right-2">
                 <FontAwesomeIcon
                   icon={faEdit}
                   className="text-black text-2xl cursor-pointer"
                   onClick={() => openRemarksModal(date)}
                 />
-              </div>
-              <div className="border p-2 mb-2"> {/* Box for meal checkboxes */}
-                <label className="mr-4">
-                  <input
-                    type="checkbox"
-                    checked={entriesByDate[date]?.[0]?.morningMeal || false}
-                    onChange={() => handleMealCheckboxChange(date, 'morningMeal')}
-                  />
-                  Morgenessen
-                </label>
-                <label className="mr-4">
-                  <input
-                    type="checkbox"
-                    checked={entriesByDate[date]?.[0]?.lunchMeal || false}
-                    onChange={() => handleMealCheckboxChange(date, 'lunchMeal')}
-                  />
-                  Mittagessen
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={entriesByDate[date]?.[0]?.eveningMeal || false}
-                    onChange={() => handleMealCheckboxChange(date, 'eveningMeal')}
-                  />
-                  Abendessen
-                </label>
               </div>
               <strong>Bemerkung:</strong>
               <p className="mr-8">{remarksByDate[date] || 'Keine Bemerkung'}</p>
@@ -214,6 +249,7 @@ const EntryList: React.FC<EntryListProps> = ({
       )}
     </div>
   );
-};
-
-export default EntryList;
+  };
+  
+  export default EntryList;
+  
