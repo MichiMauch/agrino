@@ -32,7 +32,10 @@ const HourSchema = new mongoose.Schema({
   eveningMeal: {
       type: Boolean,
       default: false
-  }
+  },
+  spesen: {
+    type: Number,
+  },
 });
 
 export default mongoose.models.Hour || mongoose.model('Hour', HourSchema);
