@@ -12,6 +12,8 @@ import Image from 'next/image';
 import agrinoLogo from '/public/images/agrino_logo_web.png';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes, faFileDownload, faPlus, faListOl, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
+import { supabase } from '../supabaseClient';
+import { AuthChangeEvent, Session, User } from '@supabase/supabase-js'; // Importiere den User Typ
 
 type HoursType = {
   [key: string]: number;
@@ -56,6 +58,7 @@ function FillHoursContent() {
   const [showDownloadModal, setShowDownloadModal] = useState<boolean>(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>('');
+  const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -87,6 +90,28 @@ function FillHoursContent() {
 
     fetchEntries();
   }, [userId]);
+
+  // Supabase login and logout functions
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) {
+      console.error('Error logging in:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error logging out:', error);
+    } else {
+      setLoggedInUser(null);
+    }
+  };
 
   const handleDateClick = (date: Date) => {
     const adjustedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -388,6 +413,17 @@ function FillHoursContent() {
           {confirmationMessage}
         </div>
       )}
+      <div className="flex justify-end mb-4">
+        {loggedInUser ? (
+          <button onClick={handleLogout} className="bg-red-500 text-white py-2 px-4 rounded">
+            Logout
+          </button>
+        ) : (
+          <button onClick={handleLogin} className="bg-blue-500 text-white py-2 px-4 rounded">
+            Login
+          </button>
+        )}
+      </div>
       <CalendarComponent
         onDateClick={handleDateClick}
         onActiveStartDateChange={handleMonthChange}
@@ -479,7 +515,6 @@ function FillHoursContent() {
           <FontAwesomeIcon icon={faFileDownload} size="3x" className="text-white" />
         </button>
       </div>
-
     </div>
   );
 }
